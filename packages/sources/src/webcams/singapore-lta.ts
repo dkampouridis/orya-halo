@@ -21,7 +21,13 @@
  * newest one is looked up again when a camera is selected.
  */
 import { defineSource, hashId } from "@orya-halo/schema";
-import type { Attribution, EntityDetail, EntityMeta, SourceOutput } from "@orya-halo/schema";
+import type {
+  Attribution,
+  EntityDetail,
+  EntityMeta,
+  SourceContext,
+  SourceOutput,
+} from "@orya-halo/schema";
 import { SourceError, fetchJson } from "../shared/overlays/http.ts";
 import { LIST_FEED_CAP, VIEW_CAP, camerasToUpdate, selectCameras } from "./shared.ts";
 import type { Camera, CameraView } from "./shared.ts";
@@ -63,10 +69,44 @@ function imageUrl(url: unknown): string {
   return typeof url === "string" && url.startsWith(IMAGE_PREFIX) && !url.includes("..") ? url : "";
 }
 
-/** Cameras with a position and a current image. */
+/**
+ * The app refreshes an open detail panel every couple of seconds, and each
+ * refresh asks the plugin again. The images change about once a minute, so
+ * the list fetched for one lookup serves every lookup for the next minute
+ * (a failed one too, so a refusal is not hammered): an open panel costs one
+ * request a minute, well inside data.gov.sg's keyless allowance.
+ */
+const LOOKUP_TTL_MS = 60_000;
+let lookup: { atMs: number; cameras: Promise<Camera[]> } | null = null;
+
+function sgLookup(ctx: SourceContext): Promise<Camera[]> {
+  const nowMs = Date.now();
+  if (!lookup || nowMs - lookup.atMs >= LOOKUP_TTL_MS || nowMs < lookup.atMs) {
+    const cameras = fetchJson<SgTrafficImages>(ctx, SG_TRAFFIC_IMAGES_API, "data.gov.sg").then(
+      sgCameras,
+    );
+    // An aborted request (the panel closed) is not a result to keep.
+    cameras.catch(() => {
+      if (ctx.signal.aborted && lookup?.cameras === cameras) lookup = null;
+    });
+    lookup = { atMs: nowMs, cameras };
+  }
+  return lookup.cameras;
+}
+
+/** Forget the cached lookup (tests). */
+export function resetSgLookup(): void {
+  lookup = null;
+}
+
+/** Cameras with a position and a current image. Unreadable entries are skipped. */
 export function sgCameras(feed: SgTrafficImages): Camera[] {
   const cameras: Camera[] = [];
-  for (const entry of feed.items?.[0]?.cameras ?? []) {
+  const list: unknown = feed.items?.[0]?.cameras;
+  for (const entry of Array.isArray(list)
+    ? (list as NonNullable<NonNullable<SgTrafficImages["items"]>[number]["cameras"]>)
+    : []) {
+    if (!entry || typeof entry !== "object") continue;
     const id = typeof entry.camera_id === "string" ? entry.camera_id.trim() : "";
     const lat = entry.location?.latitude;
     const lon = entry.location?.longitude;
@@ -162,7 +202,11 @@ export const sgLtaTrafficCameras = defineSource<SgTrafficRaw>({
   },
 
   normalise(raw, ctx): SourceOutput {
-    if (!Array.isArray(raw.feed?.items)) {
+    const items: unknown = raw.feed?.items;
+    const list: unknown = Array.isArray(items)
+      ? (items[0] as { cameras?: unknown })?.cameras
+      : null;
+    if (!Array.isArray(items) || (list !== undefined && !Array.isArray(list))) {
       throw new SourceError("bad-data", "data.gov.sg sent a camera list this app cannot read.");
     }
     const { cameras, rank } = selectCameras(sgCameras(raw.feed), {
@@ -177,8 +221,7 @@ export const sgLtaTrafficCameras = defineSource<SgTrafficRaw>({
     const id = typeof meta.cameraId === "string" ? meta.cameraId : "";
     let latest: { image: string; takenMs: number } | undefined;
     try {
-      const feed = await fetchJson<SgTrafficImages>(ctx, SG_TRAFFIC_IMAGES_API, "data.gov.sg");
-      const camera = sgCameras(feed).find((c) => c.meta.cameraId === id);
+      const camera = (await sgLookup(ctx)).find((c) => c.meta.cameraId === id);
       if (camera) latest = { image: String(camera.meta.image), takenMs: camera.fixTimeMs };
     } catch (error) {
       if (ctx.signal.aborted) throw error;

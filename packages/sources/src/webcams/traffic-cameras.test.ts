@@ -13,7 +13,7 @@
  * - austin-cameras.json: eight working cameras from data.austintexas.gov
  *   b4k4-adkb, with the columns AUSTIN_API selects.
  */
-import { describe, expect, test } from "vite-plus/test";
+import { beforeEach, describe, expect, test } from "vite-plus/test";
 import { EntityFlag, EntityKind, hashId } from "@orya-halo/schema";
 import type { SourceContext, SourcePlugin } from "@orya-halo/schema";
 import { fakeContext, fixture } from "../shared/overlays/test-context.ts";
@@ -36,8 +36,12 @@ import {
   sgCameraDetail,
   sgCameras,
   sgLtaTrafficCameras,
+  resetSgLookup,
 } from "./index.ts";
 import type { AustinCameraRow, CalgaryCameraRow, SgTrafficImages } from "./index.ts";
+
+// The Singapore lookup is cached for a minute; each test starts without it.
+beforeEach(() => resetSgLookup());
 
 type View = NonNullable<SourceContext["view"]>;
 

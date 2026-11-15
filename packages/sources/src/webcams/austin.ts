@@ -68,14 +68,22 @@ export function austinPlace(name: string): string {
     .replace(/\b(Ih|Us|Sh|Fm|Rm|Svrd|Blk|Heb)\b/g, (word: string) => word.toUpperCase());
 }
 
-/** Cameras with a position and a screenshot at the address the dataset documents. */
+/** Cameras with a position and a screenshot at the address the dataset documents. Unreadable rows are skipped. */
 export function austinCameras(rows: readonly AustinCameraRow[]): Camera[] {
   const cameras: Camera[] = [];
   for (const row of rows) {
-    const id = row.camera_id?.trim() ?? "";
+    if (!row || typeof row !== "object") continue;
+    const rawId: unknown = row.camera_id;
+    const id =
+      typeof rawId === "number" && Number.isSafeInteger(rawId) && rawId >= 0
+        ? String(rawId)
+        : typeof rawId === "string"
+          ? rawId.trim()
+          : "";
     if (!/^\d+$/.test(id)) continue;
     // Build the address from the id rather than trusting an arbitrary URL from the feed.
-    if (row.screenshot_address?.trim() !== austinScreenshot(id)) continue;
+    const shot: unknown = row.screenshot_address;
+    if (typeof shot !== "string" || shot.trim() !== austinScreenshot(id)) continue;
     const [lon, lat] = row.location?.coordinates ?? [];
     if (typeof lon !== "number" || typeof lat !== "number") continue;
     if (!Number.isFinite(lon) || !Number.isFinite(lat) || (lon === 0 && lat === 0)) continue;
@@ -85,7 +93,9 @@ export function austinCameras(rows: readonly AustinCameraRow[]): Camera[] {
       lat,
       fixTimeMs: 0,
       meta: {
-        label: austinPlace(row.location_name ?? "") || `Camera ${id}`,
+        label:
+          austinPlace(typeof row.location_name === "string" ? row.location_name : "") ||
+          `Camera ${id}`,
         provider: "Austin Transportation and Public Works",
         country: "United States",
         cameraId: id,

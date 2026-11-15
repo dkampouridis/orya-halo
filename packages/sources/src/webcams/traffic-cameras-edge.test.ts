@@ -8,7 +8,7 @@
  * for the whole source, so a single bad row that throws hides every camera
  * of that provider. Rows that cannot be read must be skipped instead.
  */
-import { describe, expect, test } from "vite-plus/test";
+import { beforeEach, describe, expect, test } from "vite-plus/test";
 import { EntityKind } from "@orya-halo/schema";
 import type { DetailMedia, EntityUpdate, SourceContext, SourcePlugin } from "@orya-halo/schema";
 import { fakeContext, fixture } from "../shared/overlays/test-context.ts";
@@ -29,8 +29,12 @@ import {
   sgCameraDetail,
   sgCameras,
   sgLtaTrafficCameras,
+  resetSgLookup,
 } from "./index.ts";
 import type { AustinCameraRow, CalgaryCameraRow, SgTrafficImages } from "./index.ts";
+
+// The Singapore lookup is cached for a minute; each test starts without it.
+beforeEach(() => resetSgLookup());
 
 const sgBody = fixture(import.meta.url, "fixtures/sg-traffic-images.json");
 const bcCsv = fixture(import.meta.url, "fixtures/drivebc-webcams.csv");
@@ -186,34 +190,34 @@ describe("empty and wrongly shaped answers", () => {
   });
 });
 
-// BUG: each of these throws a TypeError out of the parser instead of skipping
-// the row, and the runner then shows the whole provider as unreadable.
+// Each of these used to throw a TypeError out of the parser instead of skipping
+// the row, so the runner showed the whole provider as unreadable.
 describe("one unreadable row among good ones", () => {
-  test.fails("Singapore: a null camera entry is skipped", () => {
+  test("Singapore: a null camera entry is skipped", () => {
     const feed = sgFeed();
     feed.items?.[0]?.cameras?.unshift(null as never);
     expect(sgCameras(feed).length).toBe(8);
   });
 
-  test.fails("Singapore: a camera list that is not a list is bad data, not a TypeError", () => {
+  test("Singapore: a camera list that is not a list is bad data, not a TypeError", () => {
     rejects(sgLtaTrafficCameras as SourcePlugin, { feed: { items: [{ cameras: {} }] } });
   });
 
-  test.fails("Calgary: a null row is skipped", () => {
+  test("Calgary: a null row is skipped", () => {
     expect(calgaryCameras([null as never, ...calgaryRows()]).length).toBe(8);
   });
 
-  test.fails("Calgary: an image address that is not text is skipped", () => {
+  test("Calgary: an image address that is not text is skipped", () => {
     const rows = calgaryRows();
     (rows[0].camera_url as Record<string, unknown>).url = 42;
     expect(calgaryCameras(rows).length).toBe(7);
   });
 
-  test.fails("Austin: a null row is skipped", () => {
+  test("Austin: a null row is skipped", () => {
     expect(austinCameras([null as never, ...austinRows()]).length).toBe(8);
   });
 
-  test.fails("Austin: a camera id sent as a number is read or skipped, not a crash", () => {
+  test("Austin: a camera id sent as a number is read or skipped, not a crash", () => {
     const rows = austinRows();
     (rows[0] as Record<string, unknown>).camera_id = 1;
     expect(() => austinCameras(rows)).not.toThrow();
@@ -310,12 +314,9 @@ describe("attribution, licence and polling", () => {
     expect(pollsPer10s).toBeLessThan(0.1);
   });
 
-  // BUG: the app's controller reloads an open panel's detail every 2 s
-  // (DETAIL_REFRESH_MS in apps/web/src/app/controller.ts), and each reload runs
-  // this lookup again: one open Singapore panel fetches the whole list every
-  // 2 s, 6 requests in a 10 s window, which is data.gov.sg's whole keyless
-  // allowance. DATA_LICENCES.md promises "once when a camera is selected".
-  test.fails("Singapore's camera lookup is reused while the panel stays open", async () => {
+  // The app reloads an open panel every 2 s (DETAIL_REFRESH_MS); the lookup is
+  // shared for a minute so that costs one request, not one per reload.
+  test("Singapore's camera lookup is reused while the panel stays open", async () => {
     const meta = sgCameras(sgFeed())[0].meta;
     const c = fakeContext({ [SG_TRAFFIC_IMAGES_API]: sgBody });
     for (let i = 0; i < 5; i++) await sgLtaTrafficCameras.detail?.(1, meta, c);

@@ -45,29 +45,34 @@ export interface CalgaryRaw {
   view?: CameraView;
 }
 
-/** Cameras with a position and an image on the City's own camera host. */
+/** A field as trimmed text, or "" when it is not text. */
+const text = (value: unknown): string => (typeof value === "string" ? value.trim() : "");
+
+/** Cameras with a position and an image on the City's own camera host. Unreadable rows are skipped. */
 export function calgaryCameras(rows: readonly CalgaryCameraRow[]): Camera[] {
   const cameras: Camera[] = [];
   for (const row of rows) {
-    const image = row.camera_url?.url?.trim() ?? "";
+    if (!row || typeof row !== "object") continue;
+    const image = text(row.camera_url?.url);
     if (!IMAGE_PATTERN.test(image)) continue;
     const [lon, lat] = row.point?.coordinates ?? [];
     if (typeof lon !== "number" || typeof lat !== "number") continue;
     if (!Number.isFinite(lon) || !Number.isFinite(lat) || (lon === 0 && lat === 0)) continue;
     // The file name is the camera's stable key: "loc100.jpg" is "Camera 101".
     const key = /loc(\d+)\.jpg$/.exec(image)?.[1] ?? "";
-    const location = row.camera_location?.trim() ?? "";
+    const location = text(row.camera_location);
+    const description = text(row.camera_url?.description);
     cameras.push({
       id: hashId(`calgary:${key}`),
       lon,
       lat,
       fixTimeMs: 0,
       meta: {
-        label: location || row.camera_url?.description?.trim() || `Camera ${key}`,
+        label: location || description || `Camera ${key}`,
         provider: "The City of Calgary",
         country: "Canada",
-        camera: row.camera_url?.description?.trim() || null,
-        quadrant: row.quadrant?.trim() || null,
+        camera: description || null,
+        quadrant: text(row.quadrant) || null,
         image,
       },
     });

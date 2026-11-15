@@ -81,11 +81,24 @@ export interface VesselInfo {
 
 /** A name in upper case with single spaces, for the naming rules. */
 export function normaliseShipName(name: string | null | undefined): string {
-  return (name ?? "")
-    .toUpperCase()
-    .replace(/[^A-Z0-9/ ]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+  return (
+    (name ?? "")
+      .toUpperCase()
+      // Fold letters with diacritics to their ASCII spelling ("HÖEGH", "MÆRSK"),
+      // so they neither miss a rule nor break a word in two.
+      .replace(/[ÆǼ]/g, "AE")
+      .replace(/Œ/g, "OE")
+      .replace(/Ø/g, "O")
+      .replace(/ẞ|ß/g, "SS")
+      .replace(/Þ/g, "TH")
+      .replace(/[ĐÐ]/g, "D")
+      .replace(/Ł/g, "L")
+      .normalize("NFKD")
+      .replace(/\p{M}+/gu, "")
+      .replace(/[^A-Z0-9/ ]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+  );
 }
 
 /**

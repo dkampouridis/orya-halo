@@ -84,6 +84,8 @@ export interface EngineEvents {
   ready: undefined;
   /** The base map or the graphics context changed state. */
   status: EngineStatus;
+  /** The engine left the 3D view on its own: what it followed is no longer in the data. */
+  chaseEnded: undefined;
 }
 
 export interface EngineOptions {

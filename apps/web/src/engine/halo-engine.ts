@@ -1082,6 +1082,12 @@ export class HaloEngineImpl implements HaloEngine {
 
     if (this.following && this.selection) {
       const at = this.locate(this.selection);
+      if (!at && this.chasing) {
+        // What the 3D view rides with has left the data: leave the view, or
+        // the camera would hang there with everything else drawn as for it.
+        this.setChase(false);
+        this.events.emit("chaseEnded", undefined);
+      }
       if (at) {
         const adjust = this.followAdjust;
         if (adjust) {
@@ -1795,7 +1801,15 @@ export class HaloEngineImpl implements HaloEngine {
   setChase(chase: boolean): void {
     const kind = this.selection?.kind;
     const next =
-      chase && (kind === EntityKind.Aircraft || kind === EntityKind.Ship) && !this.destroyed;
+      chase &&
+      (kind === EntityKind.Aircraft || kind === EntityKind.Ship) &&
+      this.selection !== null &&
+      this.batchIndex(this.selection) !== null &&
+      !this.destroyed;
+    if (chase && !next && this.map && !this.destroyed) {
+      // Asked for, but there is nothing to ride with: say so, so the app does not show it as on.
+      queueMicrotask(() => this.events.emit("chaseEnded", undefined));
+    }
     if (next === this.chasing || !this.map) return;
     clearTimeout(this.chaseRestore);
     if (next) {

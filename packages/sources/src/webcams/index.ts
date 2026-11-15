@@ -17,6 +17,7 @@ export type { HkTrafficRaw } from "./hk-traffic.ts";
 export {
   SG_LTA_ATTRIBUTION,
   SG_TRAFFIC_IMAGES_API,
+  resetSgLookup,
   sgCameraDetail,
   sgCameras,
   sgLtaTrafficCameras,

@@ -581,10 +581,12 @@ export interface ShipValue {
 
 /** Pack a ship's length, beam, model and scheme into its batch value. */
 export function shipValue(v: ShipValue): number {
-  const length = Math.min(Math.max(Math.round(v.lengthM / LENGTH_STEP_M), 0), 255);
-  const beam = Math.min(Math.max(Math.round(v.beamM), 0), 63);
-  const model = Math.min(Math.max(Math.trunc(v.model), 0), 15);
-  const scheme = Math.min(Math.max(Math.trunc(v.scheme), 0), 63);
+  // A field that is not a finite number is unknown (0); it must not take the others with it.
+  const f = (x: number): number => (Number.isFinite(x) ? x : 0);
+  const length = Math.min(Math.max(Math.round(f(v.lengthM) / LENGTH_STEP_M), 0), 255);
+  const beam = Math.min(Math.max(Math.round(f(v.beamM)), 0), 63);
+  const model = Math.min(Math.max(Math.trunc(f(v.model)), 0), 15);
+  const scheme = Math.min(Math.max(Math.trunc(f(v.scheme)), 0), 63);
   return length + beam * 256 + model * 16_384 + scheme * 262_144;
 }
 

@@ -127,11 +127,8 @@ describe("ship value limits", () => {
     expect(splitShipValue(255.9).beamM).toBe(0);
   });
 
-  // BUG: a non-finite length or beam turns the whole value into NaN, so the
-  // model and scheme packed beside it are lost too (splitShipValue(NaN) is all
-  // zeros). The runtime filters these out before calling, but shipValue and
-  // shipValueFor are public and documented as clamping out-of-range fields.
-  test.fails("a non-finite length or beam is unknown, and keeps the model and scheme", () => {
+  // A non-finite field is unknown; it must not take the fields packed beside it.
+  test("a non-finite length or beam is unknown, and keeps the model and scheme", () => {
     for (const bad of [Number.NaN, Infinity]) {
       const v = shipValue({ lengthM: bad, beamM: 30, model: VesselModel.Tanker, scheme: 3 });
       expect(Number.isFinite(v)).toBe(true);
@@ -243,26 +240,23 @@ describe("ship names", () => {
     expect(schemeOf("cma cgm jacques saadé", Cargo)).toBe("CMA CGM");
   });
 
-  test("a non-ASCII letter never makes a word boundary that fires a rule", () => {
-    // "É" and "Ö" become spaces at the start: these must not read as "EVER ..." or "ONE ...".
-    expect(schemeOf("ÉVER GREEN", Cargo)).toBe(NO_SCHEME);
-    expect(schemeOf("ÖNE WAY", Cargo, 300)).toBe(NO_SCHEME);
+  test("a letter with a diacritic reads as its ASCII spelling, never as a word break", () => {
+    // Folded, not dropped: "ÉVER GREEN" is read exactly as "EVER GREEN" would be.
+    expect(schemeOf("ÉVER GREEN", Cargo)).toBe(schemeOf("EVER GREEN", Cargo));
+    expect(schemeOf("ÖNE WAY", Cargo, 300)).toBe(schemeOf("ONE WAY", Cargo, 300));
+    expect(normaliseShipName("ÉVER GREEN")).toBe("EVER GREEN");
     expect(normaliseShipName("北京")).toBe("");
     expect(vesselSchemeFor({ category: Cargo, name: "北京", lengthM: 300 }).scheme).toBe(0);
   });
 
-  // BUG (minor): letters with diacritics are dropped, not folded, so "HÖEGH"
-  // reads as "H EGH" and misses the Höegh Autoliners rule (and "MÆRSK" the
-  // Maersk one). AIS itself is 6-bit ASCII, so this only bites names that
-  // arrive from a feed that spells them properly. The same dropping also turns
-  // a letter inside a word into a word break: "PLÜACE" reads as "PL ACE", a car
-  // carrier name.
-  test.fails("a name with diacritics matches as its ASCII spelling", () => {
+  // Letters with diacritics are folded to ASCII (AIS itself is 6-bit ASCII; other
+  // feeds spell names properly).
+  test("a name with diacritics matches as its ASCII spelling", () => {
     expect(schemeOf("HÖEGH TRAPPER", Cargo, 200)).toBe("Höegh Autoliners");
     expect(schemeOf("ESSEN MÆRSK", Cargo)).toBe("Maersk");
   });
 
-  test.fails("a letter with a diacritic inside a word is not a word break", () => {
+  test("a letter with a diacritic inside a word is not a word break", () => {
     expect(isCarCarrierName("PLÜACE")).toBe(false);
   });
 

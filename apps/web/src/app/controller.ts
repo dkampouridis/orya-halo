@@ -332,6 +332,7 @@ export async function startController(container: HTMLElement): Promise<Controlle
     created.on("fps", (fps) => actions.setFps(fps)),
     created.on("quality", (quality) => actions.setQuality(quality)),
     created.on("status", (status) => actions.setEngineStatus(status)),
+    created.on("chaseEnded", () => actions.setChase(false)),
   );
 
   actions.setEngineStatus(created.getStatus());
