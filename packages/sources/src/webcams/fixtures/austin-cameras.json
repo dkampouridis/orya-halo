@@ -1,0 +1,8 @@
+[{"camera_id":"1","location_name":"830 BLK W RUNDBERG LN (Little Walnut Creek Library, HEB)","screenshot_address":"https://cctv.austinmobility.io/image/1.jpg","location":{"type":"Point","coordinates":[-97.698158,30.363686]}}
+,{"camera_id":"10","location_name":" 35TH ST / JACKSON AVE","screenshot_address":"https://cctv.austinmobility.io/image/10.jpg","location":{"type":"Point","coordinates":[-97.75589,30.308735]}}
+,{"camera_id":"100","location_name":" LAMAR BLVD / BARTON SPRINGS RD","screenshot_address":"https://cctv.austinmobility.io/image/100.jpg","location":{"type":"Point","coordinates":[-97.758522,30.260862]}}
+,{"camera_id":"1000","location_name":" SPRINGDALE RD / ED BLUESTEIN BLVD SVRD","screenshot_address":"https://cctv.austinmobility.io/image/1000.jpg","location":{"type":"Point","coordinates":[-97.662689,30.316633]}}
+,{"camera_id":"101","location_name":" BARTON SPRINGS RD / AZIE MORTON RD","screenshot_address":"https://cctv.austinmobility.io/image/101.jpg","location":{"type":"Point","coordinates":[-97.764984,30.264769]}}
+,{"camera_id":"1011","location_name":" BURNET RD / RESEARCH BLVD SVRD","screenshot_address":"https://cctv.austinmobility.io/image/1011.jpg","location":{"type":"Point","coordinates":[-97.726288,30.373507]}}
+,{"camera_id":"1013","location_name":" LAKELINE BLVD / 183 HWY SVRD","screenshot_address":"https://cctv.austinmobility.io/image/1013.jpg","location":{"type":"Point","coordinates":[-97.801956,30.480049]}}
+,{"camera_id":"1018","location_name":" LAKELINE MALL DR / 183 HWY SVRD","screenshot_address":"https://cctv.austinmobility.io/image/1018.jpg","location":{"type":"Point","coordinates":[-97.798264,30.473202]}}]

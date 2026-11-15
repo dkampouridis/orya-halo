@@ -27,7 +27,7 @@ docs/DATA_LICENCES.md              the human-readable record of the terms
 
 A plugin feeds one of the existing layers (`LayerId` in `packages/schema/src/kinds.ts`):
 `aircraft`, `ships`, `satellites`, `quakes`, `cables`, `radar`, `imagery`, `fires`, `webcams`
-or `nightlights`. Several plugins may feed the same layer, as the two webcam plugins do. A new
+or `nightlights`. Several plugins may feed the same layer, as the webcam plugins do. A new
 layer is a change to the shared contract in `packages/schema` and to the engine and HUD, so
 open an issue for it first.
 

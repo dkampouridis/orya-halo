@@ -65,6 +65,10 @@ const MAP_CREDITS: Record<string, string> = {
   "nasa-firms": "NASA FIRMS",
   "digitraffic-weathercams": "Fintraffic CC BY 4.0",
   "hk-traffic-cameras": "Transport Department, HKSAR",
+  "sg-lta-traffic-images": "LTA, Singapore Open Data Licence",
+  "drivebc-highwaycams": "DriveBC, OGL – British Columbia",
+  "calgary-traffic-cameras": "City of Calgary, OGL – Calgary",
+  "austin-traffic-cameras": "City of Austin",
 };
 
 const SERIES_POINTS = 96;

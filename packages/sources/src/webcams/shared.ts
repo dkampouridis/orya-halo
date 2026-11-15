@@ -136,7 +136,35 @@ export function camerasToUpdate(
   return { kind: EntityKind.Webcam, source, timeMs: nowMs, full: true, count, columns, meta };
 }
 
-/** Cap for the keyless list feeds with no viewport: both fit whole, so it only guards against a runaway feed. */
+const NAMED_ENTITIES: Record<string, string> = {
+  amp: "&",
+  lt: "<",
+  gt: ">",
+  quot: '"',
+  apos: "'",
+  nbsp: " ",
+};
+
+/**
+ * Plain text from a provider's HTML fragment: tags dropped, entities decoded
+ * (numeric ones too, for place names such as "C&#x259;X&#x323;&#x2B7;"),
+ * whitespace collapsed. The result is shown as text, never as markup.
+ */
+export function plainText(html: string): string {
+  return html
+    .replace(/<br\s*\/?>/gi, " ")
+    .replace(/<[^>]*>/g, "")
+    .replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (match, name: string) => {
+      if (name[0] !== "#") return NAMED_ENTITIES[name.toLowerCase()] ?? match;
+      const code =
+        name[1] === "x" || name[1] === "X" ? parseInt(name.slice(2), 16) : Number(name.slice(1));
+      return code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : "";
+    })
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** Cap for the keyless list feeds with no viewport: each fits whole, so it only guards against a runaway feed. */
 export const LIST_FEED_CAP = 1500;
 
 /** Most cameras one source contributes to a single view. */

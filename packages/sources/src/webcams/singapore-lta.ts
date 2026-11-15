@@ -1,0 +1,183 @@
+/**
+ * Singapore's expressway and checkpoint traffic cameras, published by the
+ * Land Transport Authority on data.gov.sg as the "Traffic Images" dataset.
+ * Keyless.
+ *
+ * Verified 2026-11-15 (https://data.gov.sg/open-data-licence,
+ * https://data.gov.sg/datasets/d_6cdb6b405b25aaaacbaf7689bcc6fae0/view and
+ * https://guide.data.gov.sg/developer-guide/api-overview/api-rate-limits,
+ * plus live requests): Singapore Open Data Licence 1.0, which allows use,
+ * copying, distribution and adaptation, commercial or not, with a
+ * conspicuous notice naming the dataset and linking to the licence, and no
+ * suggestion of official status. A key is optional: without one the
+ * real-time APIs allow 6 requests per 10 seconds. The list and the 1920 x
+ * 1080 JPEGs answer `Access-Control-Allow-Origin: *`. The feed has no
+ * camera names, only numbers, and each image has its own address, so the
+ * newest one is looked up again when a camera is selected.
+ */
+import { defineSource, hashId } from "@orya-halo/schema";
+import type { Attribution, EntityDetail, EntityMeta, SourceOutput } from "@orya-halo/schema";
+import { SourceError, fetchJson } from "../shared/overlays/http.ts";
+import { LIST_FEED_CAP, VIEW_CAP, camerasToUpdate, selectCameras } from "./shared.ts";
+import type { Camera, CameraView } from "./shared.ts";
+
+export const SG_TRAFFIC_IMAGES_API = "https://api.data.gov.sg/v1/transport/traffic-images";
+const DATASET_PAGE = "https://data.gov.sg/datasets/d_6cdb6b405b25aaaacbaf7689bcc6fae0/view";
+const LICENCE_URL = "https://data.gov.sg/open-data-licence";
+const IMAGE_PREFIX = "https://images.data.gov.sg/";
+const SOURCE_ID = "sg-lta-traffic-images";
+
+export const SG_LTA_ATTRIBUTION: Attribution = {
+  text: "Contains information from Traffic Images by the Land Transport Authority, accessed live from data.gov.sg, which is made available under the terms of the Singapore Open Data Licence version 1.0",
+  url: LICENCE_URL,
+  onMap: false,
+};
+
+/** The data.gov.sg answer, as far as this plugin reads it. */
+export interface SgTrafficImages {
+  items?: {
+    timestamp?: string;
+    cameras?: {
+      timestamp?: string;
+      image?: string;
+      camera_id?: string;
+      location?: { latitude?: number; longitude?: number };
+      image_metadata?: { width?: number; height?: number };
+    }[];
+  }[];
+  api_info?: { status?: string };
+}
+
+export interface SgTrafficRaw {
+  feed: SgTrafficImages;
+  view?: CameraView;
+}
+
+/** An image address from the feed, kept only when it is on the dataset's own image host. */
+function imageUrl(url: unknown): string {
+  return typeof url === "string" && url.startsWith(IMAGE_PREFIX) && !url.includes("..") ? url : "";
+}
+
+/** Cameras with a position and a current image. */
+export function sgCameras(feed: SgTrafficImages): Camera[] {
+  const cameras: Camera[] = [];
+  for (const entry of feed.items?.[0]?.cameras ?? []) {
+    const id = typeof entry.camera_id === "string" ? entry.camera_id.trim() : "";
+    const lat = entry.location?.latitude;
+    const lon = entry.location?.longitude;
+    const image = imageUrl(entry.image);
+    if (!/^\d+$/.test(id) || !image) continue;
+    if (typeof lat !== "number" || typeof lon !== "number") continue;
+    if (!Number.isFinite(lat) || !Number.isFinite(lon) || (lat === 0 && lon === 0)) continue;
+    const taken = Date.parse(entry.timestamp ?? "");
+    cameras.push({
+      id: hashId(`sg-lta:${id}`),
+      lon,
+      lat,
+      fixTimeMs: Number.isNaN(taken) ? 0 : taken,
+      meta: {
+        label: `Traffic camera ${id}`,
+        provider: "Land Transport Authority",
+        country: "Singapore",
+        cameraId: id,
+        image,
+      },
+    });
+  }
+  return cameras;
+}
+
+/**
+ * Detail panel content for one camera. `latest` is the camera's entry in a
+ * fresher copy of the feed, when one could be had.
+ */
+export function sgCameraDetail(
+  meta: EntityMeta,
+  latest?: { image: string; takenMs: number },
+): Partial<EntityDetail> {
+  const id = typeof meta.cameraId === "string" && /^\d+$/.test(meta.cameraId) ? meta.cameraId : "";
+  if (!id) return {};
+  const image = latest?.image || imageUrl(meta.image);
+  const detail: Partial<EntityDetail> = {
+    title: `Traffic camera ${id}`,
+    subtitle: "Traffic camera · Singapore",
+    fields: [
+      { key: "camera", label: "Camera", value: id },
+      { key: "operator", label: "Operator", value: "Land Transport Authority" },
+    ],
+    media: image
+      ? [
+          {
+            type: "image",
+            url: image,
+            link: DATASET_PAGE,
+            credit: "Land Transport Authority · data.gov.sg, Singapore Open Data Licence",
+            alt: `Traffic camera ${id}, Singapore`,
+          },
+        ]
+      : [],
+    attribution: SG_LTA_ATTRIBUTION,
+    sourceUrl: DATASET_PAGE,
+  };
+  if (latest && latest.takenMs > 0) detail.fixTimeMs = latest.takenMs;
+  return detail;
+}
+
+export const sgLtaTrafficCameras = defineSource<SgTrafficRaw>({
+  id: SOURCE_ID,
+  name: "Singapore Land Transport Authority traffic cameras (data.gov.sg)",
+  layer: "webcams",
+  transport: "fetch",
+  schema: [
+    { key: "label", label: "Place", type: "string" },
+    { key: "provider", label: "Provider", type: "string" },
+    { key: "country", label: "Country", type: "string" },
+    { key: "cameraId", label: "Camera", type: "string" },
+    { key: "image", label: "Latest image", type: "url" },
+  ],
+  // Images are taken about once a minute; the panel looks up the newest when a camera is selected.
+  refreshRate: 5 * 60_000,
+  licence: {
+    name: "Singapore Open Data Licence 1.0",
+    url: LICENCE_URL,
+    display: true,
+    redistribution: true,
+    commercial: true,
+    notes:
+      "Show a conspicuous notice naming the dataset and linking to the licence; do not suggest official status. Without a key the real-time APIs allow 6 requests per 10 seconds.",
+    verified: "2026-11-15",
+  },
+  attribution: SG_LTA_ATTRIBUTION,
+  docs: DATASET_PAGE,
+
+  async fetch(ctx) {
+    const feed = await fetchJson<SgTrafficImages>(ctx, SG_TRAFFIC_IMAGES_API, "data.gov.sg");
+    return { feed, view: ctx.view };
+  },
+
+  normalise(raw, ctx): SourceOutput {
+    if (!Array.isArray(raw.feed?.items)) {
+      throw new SourceError("bad-data", "data.gov.sg sent a camera list this app cannot read.");
+    }
+    const { cameras, rank } = selectCameras(sgCameras(raw.feed), {
+      view: raw.view,
+      cap: raw.view ? VIEW_CAP : LIST_FEED_CAP,
+    });
+    return { type: "entities", update: camerasToUpdate(SOURCE_ID, cameras, rank, ctx.now()) };
+  },
+
+  async detail(_id, meta, ctx) {
+    if (!meta) return {};
+    const id = typeof meta.cameraId === "string" ? meta.cameraId : "";
+    let latest: { image: string; takenMs: number } | undefined;
+    try {
+      const feed = await fetchJson<SgTrafficImages>(ctx, SG_TRAFFIC_IMAGES_API, "data.gov.sg");
+      const camera = sgCameras(feed).find((c) => c.meta.cameraId === id);
+      if (camera) latest = { image: String(camera.meta.image), takenMs: camera.fixTimeMs };
+    } catch (error) {
+      if (ctx.signal.aborted) throw error;
+      // The image from the last list is a minute or two old at worst: show it.
+    }
+    return sgCameraDetail(meta, latest);
+  },
+});
