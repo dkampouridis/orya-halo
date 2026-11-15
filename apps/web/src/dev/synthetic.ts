@@ -5,6 +5,7 @@
  * same `RenderBatch` shape, including blend offsets when a fix is corrected.
  */
 import {
+  aircraftModelForType,
   BLEND_SIZE,
   EARTH_RADIUS_M,
   EntityFlag,
@@ -154,6 +155,70 @@ function wrapLon(lon: number): number {
 }
 
 /** True state of one kind's objects, advanced by the sandbox between batches. */
+/** A traffic mix like a European sky's, by ICAO type, weighted by how common each is. */
+const SYNTHETIC_TYPES: readonly (readonly [string, number])[] = [
+  ["A320", 18],
+  ["A20N", 10],
+  ["B738", 16],
+  ["B38M", 6],
+  ["A321", 8],
+  ["A319", 5],
+  ["BCS3", 3],
+  ["E190", 5],
+  ["E75L", 3],
+  ["CRJ9", 3],
+  ["AT76", 4],
+  ["DH8D", 3],
+  ["B789", 3],
+  ["B77W", 3],
+  ["A359", 3],
+  ["A333", 2],
+  ["B744", 1],
+  ["A388", 1],
+  ["B763", 1],
+  ["MD11", 1],
+  ["C56X", 2],
+  ["GLF6", 1],
+  ["C172", 3],
+  ["P28A", 2],
+  ["BE20", 1],
+  ["PC12", 1],
+  ["EC35", 2],
+  ["C130", 1],
+];
+const SYNTHETIC_TOTAL = SYNTHETIC_TYPES.reduce((sum, [, w]) => sum + w, 0);
+
+/** A stable aircraft type for a synthetic aircraft, as its model id. */
+function syntheticAircraftModel(id: number): number {
+  let u = (Math.imul(id ^ 0x5bd1e995, 2246822519) >>> 0) % SYNTHETIC_TOTAL;
+  for (const [code, weight] of SYNTHETIC_TYPES) {
+    if (u < weight) return aircraftModelForType(code);
+    u -= weight;
+  }
+  return 0;
+}
+
+/** Typical length range of each `ShipCategory`, metres. */
+const SHIP_LENGTHS: readonly (readonly [number, number])[] = [
+  [30, 150], // unknown
+  [120, 400], // cargo
+  [100, 330], // tanker
+  [60, 300], // passenger
+  [15, 60], // fishing
+  [15, 45], // service
+  [20, 60], // high-speed
+  [8, 30], // pleasure
+  [50, 200], // military
+  [20, 120], // other
+];
+
+/** A stable, plausible length for a synthetic ship, as the render style byte (length over 400 m). */
+function shipLengthByte(category: number, id: number): number {
+  const [min, max] = SHIP_LENGTHS[category] ?? SHIP_LENGTHS[0];
+  const u = ((Math.imul(id, 2654435761) >>> 0) % 1000) / 1000;
+  return Math.round(((min + (max - min) * u) / 400) * 255);
+}
+
 interface Fleet {
   kind: EntityKind;
   count: number;
@@ -377,6 +442,10 @@ export class SyntheticWorld {
         }
         batch.style[s] = f.category[i];
         batch.style[s + 1] = f.flags[i];
+        if (f.kind === EntityKind.Ship)
+          batch.style[s + 2] = shipLengthByte(f.category[i], batch.ids[i]);
+        if (f.kind === EntityKind.Aircraft)
+          batch.style[s + 3] = syntheticAircraftModel(batch.ids[i]);
       }
       f.batch = batch;
       out.push(batch);

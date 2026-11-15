@@ -383,6 +383,10 @@ export async function startController(container: HTMLElement): Promise<Controlle
       (following) => created.setFollowing(following),
     ),
     store.subscribe(
+      (s) => s.chase,
+      (chase) => created.setChase(chase),
+    ),
+    store.subscribe(
       (s) => s.reducedMotion,
       (reduced) => created.setReducedMotion(reduced),
     ),

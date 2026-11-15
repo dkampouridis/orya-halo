@@ -25,6 +25,7 @@ layout(std140) uniform moversUniforms {
   float farPointPx;
   float spaceDim;
   float thin;
+  float body;
   vec3 color;
   vec3 emergencyColor;
 } movers;
@@ -64,6 +65,8 @@ export type MoversUniformProps = {
   spaceDim: number;
   /** 0..1: the share of objects, faintest first, left undrawn in the far view. For the cheapest tier. */
   thin: number;
+  /** 0..1: how much of the glyph itself is drawn; the tail is not affected. */
+  body: number;
   color: [number, number, number];
   emergencyColor: [number, number, number];
 };
@@ -94,13 +97,52 @@ export const moversUniforms = {
     farPointPx: "f32",
     spaceDim: "f32",
     thin: "f32",
+    body: "f32",
     color: "vec3<f32>",
     emergencyColor: "vec3<f32>",
   },
 } as const satisfies ShaderModule<MoversUniformProps>;
 
-/** Glyph ids understood by the fragment shader. */
-export const GLYPH = { chevron: 0, hull: 1, diamond: 2 } as const;
+/** Silhouette families understood by the shaders; each picks its shape and size by category. */
+export const GLYPH = { aircraft: 0, ship: 1, satellite: 2 } as const;
+
+/**
+ * Size of each silhouette by category, as a share of the layer's size. Index
+ * is the category code (`AircraftCategory`, `ShipCategory`, `SatelliteCategory`
+ * in @orya-halo/schema). The shaders and `moverGlyphScale` both read these.
+ */
+export const GLYPH_SCALE = {
+  // unknown, light, medium, large, heavy, fast jet, rotorcraft, glider, drone, ground vehicle
+  aircraft: [0.95, 0.7, 0.88, 1.0, 1.22, 0.85, 0.82, 0.72, 0.55, 0.5],
+  // ships whose length is not known: unknown, cargo, tanker, passenger, fishing,
+  // service, high-speed, pleasure, military, other
+  ship: [0.85, 1.05, 1.1, 1.05, 0.7, 0.65, 0.75, 0.6, 0.95, 0.8],
+  // other, station, constellation, navigation, Earth observation, science, geostationary, debris
+  satellite: [0.9, 1.9, 0.8, 1.0, 1.0, 1.0, 1.1, 0.5],
+} as const satisfies Record<keyof typeof GLYPH, readonly number[]>;
+
+const glslArray = (values: readonly number[]): string =>
+  `float[${values.length}](${values.map((v) => v.toFixed(3)).join(", ")})`;
+
+/**
+ * How large one object's silhouette is drawn, as a share of its layer's size,
+ * from its render style bytes: the category, and for ships the length byte
+ * (length over 400 m). The same rule as the vertex shader, minus a ship's true
+ * scale close in, which depends on the view.
+ */
+export function moverGlyphScale(
+  glyph: keyof typeof GLYPH,
+  category: number,
+  value: number,
+): number {
+  const table = GLYPH_SCALE[glyph];
+  const scale = table[Math.min(Math.max(Math.trunc(category), 0), table.length - 1)] ?? 1;
+  if (glyph === "ship" && value > 0) {
+    const lengthM = (value / 255) * 400;
+    return Math.min(Math.max(Math.sqrt(lengthM / 150), 0.55), 1.5);
+  }
+  return scale;
+}
 
 /**
  * Half-extent of the quad around a glyph, in glyph half-sizes. The glow
@@ -143,6 +185,7 @@ flat out float vTail;
 flat out vec4 vTint;
 flat out float vPixel;
 flat out vec3 vFlags;
+flat out vec2 vShape;
 
 const float DEG = 0.017453292519943295;
 const float EARTH_RADIUS_M = ${EARTH_RADIUS_M.toFixed(1)};
@@ -151,6 +194,13 @@ const float PAD_RING = ${QUAD_PAD.ring.toFixed(2)};
 const float FLAG_STATIONARY = 1.0;
 const float FLAG_EMERGENCY = 2.0;
 const float FLAG_STALE = 8.0;
+
+// Size by category, as a share of the layer's size: see GLYPH_SCALE.
+const float AIRCRAFT_SCALE[10] = ${glslArray(GLYPH_SCALE.aircraft)};
+const float SHIP_SCALE[10] = ${glslArray(GLYPH_SCALE.ship)};
+const float SATELLITE_SCALE[8] = ${glslArray(GLYPH_SCALE.satellite)};
+// A ship drawn at its true length stops growing here, so a quad never covers the screen.
+const float TRUE_SCALE_MAX_PX = 360.0;
 
 ${haloCommonVS}
 
@@ -241,7 +291,26 @@ void main(void) {
   vec2 dir = aheadPx > 1.0e-4 ? ahead / aheadPx : vec2(0.0, 1.0);
   vec2 side = vec2(-dir.y, dir.x);
 
-  float size = movers.sizePx * (emergency ? 1.25 : 1.0);
+  // The probe tells how many pixels a metre along the heading is here, foreshortening included.
+  float pxPerMeter = aheadPx / (movers.probeDeg * DEG * EARTH_RADIUS_M);
+
+  float category = instanceStyle.x;
+  int cat = int(clamp(category, 0.0, 9.0));
+  float lengthM = 0.0;
+  float scale;
+  if (movers.glyph < 0.5) {
+    scale = AIRCRAFT_SCALE[cat];
+  } else if (movers.glyph < 1.5) {
+    // style.z is the ship's length over 400 m, when its static data has arrived.
+    lengthM = instanceStyle.z / 255.0 * 400.0;
+    scale = lengthM > 0.0 ? clamp(sqrt(lengthM / 150.0), 0.55, 1.5) : SHIP_SCALE[cat];
+  } else {
+    scale = SATELLITE_SCALE[min(cat, 7)];
+  }
+  float size = movers.sizePx * scale * (emergency ? 1.25 : 1.0);
+  // Close in, a ship whose length is known is drawn at that length: a
+  // 400 m container ship beside a 20 m pilot boat looks it.
+  if (lengthM > 0.0) size = max(size, min(0.5 * lengthM * pxPerMeter, TRUE_SCALE_MAX_PX));
 
   // The far view: an emergency always stands out; everything else takes its rank.
   float far = emergency ? 0.0 : movers.far;
@@ -249,9 +318,7 @@ void main(void) {
   float standing = mix(movers.farDim, 1.0, rank * rank * rank);
   float pointPx = movers.farPointPx * (0.8 + 0.45 * standing);
 
-  // Tail: the ground covered in tailSeconds, in screen pixels. The probe tells
-  // how many pixels a metre along the heading is here, foreshortening included.
-  float pxPerMeter = aheadPx / (movers.probeDeg * DEG * EARTH_RADIUS_M);
+  // Tail: the ground covered in tailSeconds, in screen pixels.
   float speedNorm = clamp(speed / movers.refSpeed, 0.0, 1.0);
   float tailPx = 0.0;
   if (movers.tailMaxPx > 0.0 && hasHeading && !stationary && speed > 0.5) {
@@ -269,6 +336,8 @@ void main(void) {
   vTail = tailUnits;
   vPixel = 1.0 / size;
   vFlags = vec3(hasHeading ? 1.0 : 0.0, emergency ? 1.0 : 0.0, pointPx);
+  // Moored ships and aircraft on the ground are drawn as outlines.
+  vShape = vec2(category, stationary && movers.glyph < 1.5 ? 1.0 : 0.0);
 
   gl_Position = clip0;
   DECKGL_FILTER_GL_POSITION(gl_Position, geometry);
@@ -313,25 +382,52 @@ flat in float vTail;
 flat in vec4 vTint;
 flat in float vPixel;
 flat in vec3 vFlags;
+flat in vec2 vShape;
 
 out vec4 fragColor;
 
 ${haloShapesFS}
 
+// Ship proportions by ShipCategory: the hull's half-beam, and the deckhouse
+// (bridge or superstructure) as its centre and half-length along the hull.
+//   unknown, cargo, tanker, passenger, fishing, service, high-speed, pleasure, military, other
+const float SHIP_BEAM[10] = float[10](0.2, 0.2, 0.21, 0.24, 0.3, 0.34, 0.26, 0.3, 0.17, 0.22);
+const vec2 SHIP_DECKHOUSE[10] = vec2[10](
+  vec2(-0.72, 0.1), vec2(-0.72, 0.1), vec2(-0.74, 0.1), vec2(-0.15, 0.55), vec2(0.05, 0.16),
+  vec2(0.25, 0.2), vec2(0.1, 0.25), vec2(-0.35, 0.18), vec2(0.0, 0.2), vec2(-0.6, 0.14)
+);
+
 void main(void) {
   geometry.uv = vLocal;
   vec2 p = vLocal;
 
+  int cat = int(clamp(vShape.x, 0.0, 9.0));
   float d;
+  // A part of the silhouette drawn solid: a ship's deckhouse, a satellite's body.
+  float detail = 1.0e3;
   if (vFlags.x < 0.5) {
-    // No heading: a neutral dot (diamond for satellites, which never have one).
+    // No heading: a neutral mark, since any silhouette would point somewhere.
     d = movers.glyph > 1.5 ? halo_sd_diamond(p) : halo_sd_circle(p, 0.55);
   } else if (movers.glyph < 0.5) {
-    d = halo_sd_chevron(p);
+    if (cat == 1 || cat == 7 || cat == 8) d = halo_sd_lightplane(p);
+    else if (cat == 5) d = halo_sd_delta(p);
+    else if (cat == 6) d = halo_sd_rotorcraft(p);
+    else if (cat == 9) d = halo_sd_circle(p, 0.4);
+    else d = halo_sd_airliner(p);
   } else if (movers.glyph < 1.5) {
-    d = halo_sd_hull(p);
+    // A symbol first, a scale drawing last: small hulls are drawn fuller than
+    // ships are, so they read as hulls and not as dashes, and take their true
+    // proportions only as they grow towards their true size.
+    float beam = SHIP_BEAM[cat] * mix(1.8, 1.0, smoothstep(16.0, 56.0, 1.0 / vPixel));
+    d = halo_sd_ship(p, beam);
+    vec2 house = SHIP_DECKHOUSE[cat];
+    detail = halo_sd_box(p, vec2(house.x, 0.0), vec2(house.y, beam * 0.62));
+  } else if (cat == 7) {
+    // Debris: a speck, not a spacecraft.
+    d = halo_sd_circle(p, 0.42);
   } else {
-    d = halo_sd_diamond(p);
+    d = halo_sd_satellite(p);
+    detail = halo_sd_box(p, vec2(0.0), vec2(0.3, 0.3));
   }
 
   if (picking.isActive > 0.5) {
@@ -351,10 +447,22 @@ void main(void) {
     // (A falling edge is written as one minus a rising one: GLSL leaves
     // smoothstep undefined when its first edge is the larger.)
     float core = 1.0 - smoothstep(-aa, aa, d);
-    // A glyph only a few pixels across carries no halo and no hot centre.
+    // A glyph only a few pixels across is a solid mark with no halo.
     float sizePx = 1.0 / vPixel;
     float presence = smoothstep(1.4, 4.5, sizePx);
     float glow = movers.glow * presence * exp(-max(d, 0.0) * 2.4);
+
+    // Large enough to read as a shape, it is drawn like a vector plot: a
+    // bright rim about a pixel wide round a see-through body, with its
+    // deckhouse or satellite body solid. Moored and parked, the body is
+    // nearly empty, so a harbour reads differently from traffic under way.
+    float open = smoothstep(4.0, 9.0, sizePx);
+    float inner = 1.0 - smoothstep(-aa, aa, d + 1.15 * vPixel);
+    float rim = max(core - inner, 0.0);
+    float part = (1.0 - smoothstep(-aa, aa, detail)) * inner;
+    float body = vShape.y > 0.5 ? 0.1 : 0.36;
+    float fill = mix(1.0, mix(body, 0.88, part), open);
+    vec3 rimRgb = mix(base, vec3(1.0), 0.3 * open);
 
     // Comet tail behind the glyph: tapers and fades towards its end.
     float tail = 0.0;
@@ -365,9 +473,9 @@ void main(void) {
       tail = across * pow(1.0 - u, 1.6) * 0.85 * step(-vTail, p.x);
     }
 
-    // A slightly hot centre reads as "lit" without leaving the layer's hue.
-    vec3 rgb = mix(base, vec3(1.0), 0.22 * core * presence) * max(core, tail) + base * glow * 0.42;
-    float alpha = max(core, tail * 0.8);
+    float tailOnly = tail * (1.0 - core);
+    vec3 rgb = (rimRgb * rim + base * inner * fill + base * glow * 0.42) * movers.body + base * tailOnly;
+    float alpha = (rim + inner * fill) * movers.body + tailOnly * 0.8;
 
     if (vFlags.y > 0.5) {
       float r = length(p);

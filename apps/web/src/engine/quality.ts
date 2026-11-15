@@ -20,6 +20,8 @@ export interface QualitySettings {
   farThin: number;
   /** Milliseconds MapLibre fades labels and tiles in over; 0 saves the repaints the fades cost. */
   mapFadeMs: number;
+  /** Close in, draw aircraft as 3D models of their types instead of flat glyphs. */
+  aircraftModels: boolean;
 }
 
 export const QUALITY: Record<QualityTier, QualitySettings> = {
@@ -33,6 +35,7 @@ export const QUALITY: Record<QualityTier, QualitySettings> = {
     density: true,
     farThin: 0,
     mapFadeMs: 200,
+    aircraftModels: true,
   },
   balanced: {
     maxPixelRatio: 1.5,
@@ -44,6 +47,7 @@ export const QUALITY: Record<QualityTier, QualitySettings> = {
     density: true,
     farThin: 0,
     mapFadeMs: 200,
+    aircraftModels: true,
   },
   // For integrated graphics and phones: one canvas pixel per CSS pixel, bare
   // glyphs on small quads, half the points of a far view, a third of the
@@ -58,6 +62,7 @@ export const QUALITY: Record<QualityTier, QualitySettings> = {
     density: false,
     farThin: 0.5,
     mapFadeMs: 0,
+    aircraftModels: false,
   },
 };
 

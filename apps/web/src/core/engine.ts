@@ -114,6 +114,11 @@ export interface HaloEngine {
   setSelection(ref: EntityRef | null): void;
   /** Keep the camera locked on the selection until the person moves the globe. */
   setFollowing(following: boolean): void;
+  /**
+   * The 3D view: while following an aircraft, ride just above and behind it,
+   * looking along its track, with every aircraft drawn at true scale.
+   */
+  setChase(chase: boolean): void;
   setQuality(tier: QualityTier): void;
   setReducedMotion(reduced: boolean): void;
   /** Slow automatic rotation, for the opening shot and idle mode. */

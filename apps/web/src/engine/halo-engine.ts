@@ -7,7 +7,11 @@
  * costs one instanced draw call per kind because all motion is in the vertex
  * shader. A static camera therefore never re-rasterises the map.
  */
-import { _GlobeViewport as GlobeViewport, WebMercatorViewport } from "@deck.gl/core";
+import {
+  _GlobeView as GlobeView,
+  _GlobeViewport as GlobeViewport,
+  WebMercatorViewport,
+} from "@deck.gl/core";
 import type { Layer, PickingInfo } from "@deck.gl/core";
 import { PathLayer } from "@deck.gl/layers";
 import { MapboxOverlay } from "@deck.gl/mapbox";
@@ -19,14 +23,22 @@ import {
   createReticle,
   globeCommon,
   haloVisibility,
+  AircraftModelsLayer,
+  prepareAircraftMeshes,
+  warmAircraftModelsLayer,
   markersFromBatch,
   markersFromDensity,
+  moverGlyphScale,
+  sizeAtZoom,
 } from "@orya-halo/layers";
 import type { MarkerMode, MoverGlyph, Reticle } from "@orya-halo/layers";
 import {
   EntityKind,
+  aircraftModel,
+  genericAircraftModel,
   LAYERS,
   MOTION_SIZE,
+  STYLE_SIZE,
   createRenderBatch,
   extrapolate,
   hexToRgb,
@@ -61,6 +73,7 @@ import type {
 import {
   FADE_MS,
   GLOBE_MAX_ZOOM,
+  chaseCamera,
   approach,
   flyDurationMs,
   followCentre,
@@ -115,6 +128,55 @@ const LIGHTS_CREDIT: Credit = {
   text: "Night lights: NASA Earth Observatory",
   url: "https://science.nasa.gov/earth/earth-observatory/earth-at-night/maps/",
 };
+const DEG = Math.PI / 180;
+
+/** A 40 m airliner's model is drawn this long while its true size is smaller; none is shorter than the minimum. */
+const MODEL_TARGET_PX = 48;
+const MODEL_MIN_PX = 22;
+
+/**
+ * deck.gl's near plane, in viewport heights from the camera (its default is
+ * 0.5, which cut away aircraft flying high under a tilted camera). Closer
+ * costs depth precision: at the 3D view's distance the chased aircraft is a
+ * few hundred metres away and needs the closest; elsewhere that would leave
+ * models kilometres away with too little depth to tell wing from fuselage.
+ */
+const NEAR_Z_MULTIPLIER = 0.02;
+const NEAR_Z_MULTIPLIER_CHASE = 0.001;
+
+/**
+ * The 3D view. The camera looks down at CHASE_PITCH degrees along the
+ * aircraft's track, turned CHASE_SIDE_DEG off it for a three-quarter view,
+ * CHASE_DISTANCE_PER_SIZE times the aircraft's size behind it (so every type
+ * fills about the same share of the screen). It eases to that pose with
+ * this half-life.
+ */
+const CHASE_PITCH = 76;
+const CHASE_SIDE_DEG = -22;
+const CHASE_DISTANCE_PER_SIZE = 4.5;
+const CHASE_EASE_MS = 450;
+/**
+ * On deck.gl's globe a vertex is stored relative to the Earth's centre in
+ * 32-bit floats, about 0.75 m apart: a 1.7 m fuselage seen from 70 m away
+ * comes out jagged. So the chased aircraft is drawn at least this long, and
+ * the camera stands back by the same factor: the same picture on screen,
+ * with the rounding a fraction of a pixel.
+ */
+const CHASE_MIN_DRAWN_M = 260;
+/** MapLibre's own pitch limit outside the 3D view. */
+const MAX_PITCH = 70;
+
+/**
+ * Zoom range over which aircraft turn from flat glyphs into 3D models of
+ * their types: the glyph fades out as the model fades in.
+ */
+const MODEL_ZOOM: [number, number] = [8.6, 9.6];
+
+/** Smallest ring diameters, pixels; rings grow to clear larger silhouettes. */
+const HOVER_RING_PX = 18;
+const SELECT_RING_PX = 28;
+const RING_MAX_PX = 96;
+
 /** Narrower than this, the HUD stacks along the bottom edge (DESIGN.md, "Phones"). */
 const PHONE_WIDTH = 720;
 
@@ -145,9 +207,10 @@ interface MoverStyle {
 /** How each moving kind is drawn. Colours come from the layer registry. */
 const MOVERS: Partial<Record<EntityKind, MoverStyle>> = {
   [EntityKind.Aircraft]: {
-    glyph: "chevron",
-    sizePixels: [1.15, 9],
-    sizeZoomRange: [1.6, 8],
+    glyph: "aircraft",
+    // Silhouettes need more pixels than arrows did to read as what they are.
+    sizePixels: [1.15, 12],
+    sizeZoomRange: [1.6, 8.5],
     tailSeconds: 75,
     tailMinPixels: 9,
     tailMaxPixels: 64,
@@ -160,9 +223,10 @@ const MOVERS: Partial<Record<EntityKind, MoverStyle>> = {
     spaceDim: 0,
   },
   [EntityKind.Ship]: {
-    glyph: "hull",
-    sizePixels: [1.1, 9],
-    sizeZoomRange: [1.8, 10],
+    glyph: "ship",
+    // Close in, ships whose length is known grow past this to their true size.
+    sizePixels: [1.1, 14],
+    sizeZoomRange: [1.8, 9],
     tailSeconds: 600,
     tailMinPixels: 5,
     tailMaxPixels: 40,
@@ -175,12 +239,14 @@ const MOVERS: Partial<Record<EntityKind, MoverStyle>> = {
     spaceDim: 0,
   },
   [EntityKind.Satellite]: {
-    glyph: "diamond",
-    sizePixels: [1.2, 6],
+    glyph: "satellite",
+    sizePixels: [1.2, 10],
     sizeZoomRange: [1.5, 6.5],
+    // No tail: behind a satellite's panels it turned the icon into a T, and
+    // satellites visibly cross the screen without one.
     tailSeconds: 10,
-    tailMinPixels: 6,
-    tailMaxPixels: 26,
+    tailMinPixels: 0,
+    tailMaxPixels: 0,
     referenceSpeed: 7600,
     altitudeScale: 1,
     limbFade: 0,
@@ -335,6 +401,14 @@ export class HaloEngineImpl implements HaloEngine {
   private selectedAt = 0;
   private hover: PickInfo | null = null;
   private following = false;
+  /** The 3D view: riding behind the followed aircraft. */
+  private chasing = false;
+  private chaseRestore = 0;
+  /** Camera to chased aircraft, metres: eased from where the camera was to the 3D view's distance. */
+  private chaseDistanceM = 0;
+  /** The 3D view's own bearing and pitch, about the aircraft (the map's are about its centre). */
+  private chaseBearing = 0;
+  private chasePitch = 0;
   private followFrom: { lon: number; lat: number; startedAt: number } | null = null;
   /** A change of zoom, bearing or pitch asked for while following, eased in by the frame loop. */
   private followAdjust: {
@@ -373,14 +447,19 @@ export class HaloEngineImpl implements HaloEngine {
   private canvasTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly reported = new Set<string>();
 
-  private readonly hoverRing: Reticle = createReticle(18, HALO);
-  private readonly selectRing: Reticle = createReticle(28, HALO);
+  private readonly hoverRing: Reticle = createReticle(HOVER_RING_PX, HALO);
+  private readonly selectRing: Reticle = createReticle(SELECT_RING_PX, HALO);
   private readonly reticles: Reticle[] = [this.hoverRing, this.selectRing];
   private readonly locateIndex = new Map<EntityKind, { seq: number; id: number; index: number }>();
   private readonly scratch: [number, number, number] = [0, 0, 0];
 
   private layers: Layer[] = [];
   private layersDirty = true;
+  /** Where the aircraft models layer sits in `layers`, or -1 when it is not drawn. */
+  private modelsIndex = -1;
+  /** Rate of turn by aircraft id, degrees a second, from successive fixes: banks the models. */
+  private turnRates = new Map<number, number>();
+  private lastHeadings = new Map<number, { heading: number; fixMs: number }>();
   private isPicking = false;
   private pointer: { x: number; y: number } | null = null;
   private hoverDirty = false;
@@ -470,7 +549,7 @@ export class HaloEngineImpl implements HaloEngine {
       pitch: view.pitch ?? 0,
       minZoom: 0.6,
       maxZoom: 18,
-      maxPitch: 70,
+      maxPitch: MAX_PITCH,
       attributionControl: false,
       // The engine emits `dive` on a double click instead of zooming a step.
       doubleClickZoom: false,
@@ -590,11 +669,12 @@ export class HaloEngineImpl implements HaloEngine {
         batch,
         getTimeMs: this.now,
         color: [0, 0, 0],
-        glyph: "chevron",
+        glyph: "aircraft",
         opacity: 0,
         parameters: GLOW_PARAMETERS,
       }),
       new ReticleLayer({ id: "warm-reticle", reticles: [ring], parameters: GLOW_PARAMETERS }),
+      warmAircraftModelsLayer("warm-models"),
     ];
     return this.warmSet;
   }
@@ -608,6 +688,13 @@ export class HaloEngineImpl implements HaloEngine {
   private mountDataCanvas(): void {
     this.overlay = new MapboxOverlay({
       interleaved: false,
+      // The overlay's own globe view ("mapbox" is the id it looks for), with a
+      // near plane much closer than deck.gl's default of half the screen
+      // height. That default sits a third of the way from the camera to the
+      // ground: with the camera tilted, a cruising aircraft below it was
+      // clipped away, glyph, ring and model alike. The map is always a globe.
+      // (MapboxOverlay reads `views` but its props type leaves them out.)
+      ...({ views: this.globeView(false) } as object),
       layers: [],
       useDevicePixels: this.pixelRatio(),
       pickingRadius: 0,
@@ -853,6 +940,7 @@ export class HaloEngineImpl implements HaloEngine {
     if (!this.ready) {
       // First frame after the style and the sky are in: the globe is on screen.
       this.ready = true;
+      this.prepareModelsWhenIdle();
       this.events.emit("ready", undefined);
       // The starting view is a view too: whoever feeds the engine data needs it.
       this.scheduleViewEmit(0);
@@ -895,7 +983,15 @@ export class HaloEngineImpl implements HaloEngine {
       this.updateSky(false);
       this.refreshOverlayFrames();
     }
+    if (this.modelsActive() !== this.modelsIndex >= 0) this.layersDirty = true;
     if (this.layersDirty) this.rebuildLayers();
+    else if (this.modelsIndex >= 0) {
+      // Models are placed on the CPU: a fresh layer each frame moves them.
+      const layers = this.layers.slice();
+      layers[this.modelsIndex] = this.modelsLayer();
+      this.layers = layers;
+      this.overlay.setProps({ layers });
+    }
 
     // The map's own render already redraws the data canvas in step with the
     // camera; only ask for a redraw on frames where the map stays still.
@@ -904,6 +1000,23 @@ export class HaloEngineImpl implements HaloEngine {
   };
 
   private reticleLayer: ReticleLayer | null = null;
+
+  /** Build the 3D aircraft meshes in idle moments after start-up, a few at a time. */
+  private prepareModelsWhenIdle(): void {
+    const step = (deadline?: IdleDeadline): void => {
+      if (this.destroyed) return;
+      const started = performance.now();
+      const timeLeft = deadline
+        ? () => deadline.timeRemaining()
+        : () => 8 - (performance.now() - started);
+      if (!prepareAircraftMeshes(timeLeft)) schedule();
+    };
+    const schedule = (): void => {
+      if (typeof requestIdleCallback === "function") requestIdleCallback(step, { timeout: 2000 });
+      else setTimeout(step, 50);
+    };
+    schedule();
+  }
 
   /** True while the frame loop places the camera itself, every frame. */
   private drivesCamera(): boolean {
@@ -937,28 +1050,64 @@ export class HaloEngineImpl implements HaloEngine {
             adjust.resolve();
           }
         }
-        // Look where the object is drawn: the position the shader gives it,
-        // and, with the camera pitched, the ground beyond it that its height
-        // lines up with. That keeps it in the middle of the clear area.
-        const target = followCentre(
-          at.lon,
-          at.lat,
-          this.drawnAltitude(this.selection.kind, at.alt),
-          pitch ?? map.getPitch(),
-          bearing ?? map.getBearing(),
-          this.centre,
-        );
-        lon = target[0];
-        lat = target[1];
-        // Glide from where the camera was when follow was engaged.
-        const from = this.followFrom;
-        const g = from ? clamp((perfNow - from.startedAt) / FOLLOW_ENGAGE_MS, 0, 1) : 1;
-        if (from && g < 1) {
-          const k = g * g * (3 - 2 * g);
-          lon = from.lon + wrapLon(lon - from.lon) * k;
-          lat = from.lat + (lat - from.lat) * k;
-        } else {
-          this.followFrom = null;
+        let chased = false;
+        if (this.chasing && !adjust) {
+          // The 3D view: place the camera itself, on the sphere, behind the aircraft.
+          const subject = this.chaseSubject();
+          const k = this.reducedMotion ? 1 : 1 - 0.5 ** (dt / CHASE_EASE_MS);
+          // Bearing, pitch and distance are the view's own, about the aircraft;
+          // the map's are about its centre, kilometres away, and differ.
+          const b0 = this.chaseBearing;
+          const goalBearing =
+            (Number.isFinite(subject.heading) ? subject.heading : b0) + CHASE_SIDE_DEG;
+          this.chaseBearing = b0 + bearingDelta(b0, goalBearing) * k;
+          this.chasePitch += (CHASE_PITCH - this.chasePitch) * k;
+          const goalDistance =
+            Math.max(subject.size * CHASE_DISTANCE_PER_SIZE, 60) * this.chaseScale(subject.size);
+          this.chaseDistanceM += (goalDistance - this.chaseDistanceM) * k;
+          const camera = chaseCamera(
+            at.lon,
+            at.lat,
+            this.drawnAltitude(EntityKind.Aircraft, at.alt),
+            this.chaseBearing,
+            this.chasePitch,
+            this.chaseDistanceM,
+            this.options.container.clientHeight,
+          );
+          if (camera) {
+            lon = camera.lon;
+            lat = camera.lat;
+            bearing = camera.bearing;
+            pitch = camera.pitch;
+            zoom = clamp(camera.zoom, map.getMinZoom(), map.getMaxZoom());
+            this.followFrom = null;
+            chased = true;
+          }
+        }
+        if (!chased) {
+          // Look where the object is drawn: the position the shader gives it,
+          // and, with the camera pitched, the ground beyond it that its height
+          // lines up with. That keeps it in the middle of the clear area.
+          const target = followCentre(
+            at.lon,
+            at.lat,
+            this.drawnAltitude(this.selection.kind, at.alt),
+            pitch ?? map.getPitch(),
+            bearing ?? map.getBearing(),
+            this.centre,
+          );
+          lon = target[0];
+          lat = target[1];
+          // Glide from where the camera was when follow was engaged.
+          const from = this.followFrom;
+          const g = from ? clamp((perfNow - from.startedAt) / FOLLOW_ENGAGE_MS, 0, 1) : 1;
+          if (from && g < 1) {
+            const k = g * g * (3 - 2 * g);
+            lon = from.lon + wrapLon(lon - from.lon) * k;
+            lat = from.lat + (lat - from.lat) * k;
+          } else {
+            this.followFrom = null;
+          }
         }
       }
     } else if (this.orbiting && !this.reducedMotion && !this.flight) {
@@ -1038,7 +1187,85 @@ export class HaloEngineImpl implements HaloEngine {
 
   setBatch(batch: RenderBatch): void {
     this.batches.set(batch.kind, batch);
+    if (batch.kind === EntityKind.Aircraft) this.updateTurnRates(batch);
     this.layersDirty = true;
+  }
+
+  /** Each aircraft's rate of turn, from the change in heading between its fixes. */
+  private updateTurnRates(batch: RenderBatch): void {
+    const headings = new Map<number, { heading: number; fixMs: number }>();
+    const rates = new Map<number, number>();
+    for (let i = 0; i < batch.count; i++) {
+      const id = batch.ids[i];
+      const m = i * MOTION_SIZE;
+      const heading = batch.motion[m];
+      const fixMs = batch.epochMs + batch.motion[m + 3] * 1000;
+      if (!Number.isFinite(heading)) continue;
+      headings.set(id, { heading, fixMs });
+      const before = this.lastHeadings.get(id);
+      const kept = this.turnRates.get(id) ?? 0;
+      const dt = before ? (fixMs - before.fixMs) / 1000 : 0;
+      if (before && dt >= 1 && dt <= 90) {
+        const turn = (((heading - before.heading + 540) % 360) - 180) / dt;
+        // Smoothed, so one noisy heading does not throw the wings about.
+        rates.set(id, kept * 0.4 + turn * 0.6);
+      } else if (before && dt < 1) {
+        rates.set(id, kept);
+      } else if (kept !== 0) {
+        rates.set(id, kept * 0.5);
+      }
+      if (before && dt < 1) headings.set(id, before);
+    }
+    this.lastHeadings = headings;
+    this.turnRates = rates;
+  }
+
+  /** True when aircraft should be drawn as 3D models at the current zoom. */
+  private modelsActive(): boolean {
+    const batch = this.batches.get(EntityKind.Aircraft);
+    return (
+      QUALITY[this.quality].aircraftModels &&
+      this.visible.aircraft &&
+      batch !== undefined &&
+      batch.count > 0 &&
+      this.map.getZoom() >= MODEL_ZOOM[0]
+    );
+  }
+
+  /** Half the on-screen size of an aircraft's 3D model, by the models layer's own rule. */
+  private modelHalfPixels(batch: RenderBatch, i: number, lon: number, lat: number): number {
+    const s = i * STYLE_SIZE;
+    const spec = aircraftModel(batch.style[s + 3] || genericAircraftModel(batch.style[s]));
+    if (!spec) return 0;
+    const a = this.project(lon, lat);
+    const b = this.project(lon + 100 / (111_320 * Math.max(Math.cos(lat * DEG), 0.01)), lat);
+    if (!a || !b) return 0;
+    const pixelsPerMeter = Math.hypot(b.x - a.x, b.y - a.y) / 100;
+    const size = Math.max(spec.lengthM, spec.spanM);
+    const k = Math.max(
+      1,
+      MODEL_TARGET_PX / (40 * pixelsPerMeter),
+      MODEL_MIN_PX / (size * pixelsPerMeter),
+    );
+    return (size * pixelsPerMeter * k) / 2;
+  }
+
+  private modelsLayer(): AircraftModelsLayer {
+    const zoom = this.map.getZoom();
+    const t = clamp((zoom - MODEL_ZOOM[0]) / (MODEL_ZOOM[1] - MODEL_ZOOM[0]), 0, 1);
+    return new AircraftModelsLayer({
+      id: "aircraft-models",
+      batch: this.batches.get(EntityKind.Aircraft) ?? null,
+      timeMs: this.now(),
+      turnRates: this.turnRates,
+      altitudeScale: MOVERS[EntityKind.Aircraft]?.altitudeScale ?? 1,
+      selectedId: this.selection?.kind === EntityKind.Aircraft ? this.selection.id : null,
+      // In the 3D view the camera is beside the aircraft: true size, nothing enlarged.
+      selectedScale: this.chasing ? this.chaseScale(this.chaseSubject().size) : 1,
+      targetPixels: this.chasing ? 0 : MODEL_TARGET_PX,
+      minPixels: this.chasing ? 0 : MODEL_MIN_PX,
+      opacity: t * t * (3 - 2 * t),
+    });
   }
 
   setDensity(grid: DensityGrid): void {
@@ -1249,7 +1476,8 @@ export class HaloEngineImpl implements HaloEngine {
     }
 
     const track = this.track;
-    if (track) {
+    // In the 3D view the track runs back under the camera and smears across the screen.
+    if (track && !this.chasing) {
       const def = layerForKind(track.ref.kind);
       const color = hexToRgb(def.accent);
       layers.push(
@@ -1300,14 +1528,29 @@ export class HaloEngineImpl implements HaloEngine {
           getTimeMs: this.now,
           color: hexToRgb(def.accent),
           ...style,
-          tail: q.tails,
+          // In the 3D view the camera is among the aircraft: their trails, drawn
+          // flat on the screen, would only streak the sky.
+          tail: q.tails && !(this.chasing && kind === EntityKind.Aircraft),
           glow: q.glow,
           farThin: q.farThin,
           slowMotion: this.reducedMotion,
+          bodyFadeZoomRange: kind === EntityKind.Aircraft && q.aircraftModels ? MODEL_ZOOM : null,
           pickable: true,
           parameters: GLOW_PARAMETERS,
         }),
       );
+    }
+
+    if (q.aircraftModels && this.visible.aircraft) {
+      // Holds the 3D model shaders in luma.gl's cache (it drops a program
+      // with its last layer, and a recompile is a 40 ms stall the first time
+      // models appear). One transparent instance, smaller than a pixel.
+      layers.push(warmAircraftModelsLayer("models-keep"));
+    }
+    this.modelsIndex = -1;
+    if (this.modelsActive()) {
+      this.modelsIndex = layers.length;
+      layers.push(this.modelsLayer());
     }
 
     this.reticleLayer = new ReticleLayer({
@@ -1410,9 +1653,82 @@ export class HaloEngineImpl implements HaloEngine {
     else this.endFollow();
   }
 
+  setChase(chase: boolean): void {
+    const next = chase && this.selection?.kind === EntityKind.Aircraft && !this.destroyed;
+    if (next === this.chasing || !this.map) return;
+    clearTimeout(this.chaseRestore);
+    if (next) {
+      this.map.setMaxPitch(CHASE_PITCH + 2);
+      // Swoop in from about where the camera is now.
+      const zoom = this.map.getZoom();
+      const lat = this.map.getCenter().lat;
+      const metresPerPixel = (40_075_016.686 * Math.cos(lat * DEG)) / (512 * 2 ** zoom);
+      this.chaseDistanceM = 1.5 * this.options.container.clientHeight * metresPerPixel;
+      this.chaseBearing = this.map.getBearing();
+      this.chasePitch = this.map.getPitch();
+      if (!this.following) this.setFollowing(true);
+      this.chasing = true;
+      this.layersDirty = true;
+      this.setNearPlane(true);
+      return;
+    }
+    this.chasing = false;
+    this.layersDirty = true;
+    this.setNearPlane(false);
+    if (!this.following) {
+      this.map.setMaxPitch(MAX_PITCH);
+      return;
+    }
+    // Back out to an ordinary follow: up and away, then the usual pitch limit.
+    const durationMs = this.reducedMotion ? 0 : 900;
+    void this.adjustFollow(
+      { lon: 0, lat: 0, zoom: Math.min(this.map.getZoom() - 3, 11), pitch: 50 },
+      { durationMs },
+    );
+    this.chaseRestore = window.setTimeout(() => this.map?.setMaxPitch(MAX_PITCH), durationMs + 50);
+  }
+
+  /** The overlay's view: deck.gl's globe with the near plane for the mode the camera is in. */
+  private globeView(chasing: boolean): GlobeView {
+    return new GlobeView({
+      id: "mapbox",
+      nearZMultiplier: chasing ? NEAR_Z_MULTIPLIER_CHASE : NEAR_Z_MULTIPLIER,
+    });
+  }
+
+  private setNearPlane(chasing: boolean): void {
+    this.overlay?.setProps({ views: this.globeView(chasing) } as object);
+  }
+
+  /** How much the chased aircraft is enlarged in the 3D view (see CHASE_MIN_DRAWN_M). */
+  private chaseScale(size: number): number {
+    return Math.max(1, CHASE_MIN_DRAWN_M / size);
+  }
+
+  /** The chased aircraft's size (larger of length and span, metres) and heading. */
+  private chaseSubject(): { size: number; heading: number } {
+    const found = this.selection ? this.batchIndex(this.selection) : null;
+    if (!found) return { size: 40, heading: Number.NaN };
+    const s = found.index * STYLE_SIZE;
+    const spec = aircraftModel(
+      found.batch.style[s + 3] || genericAircraftModel(found.batch.style[s]),
+    );
+    return {
+      size: spec ? Math.max(spec.lengthM, spec.spanM) : 40,
+      heading: found.batch.motion[found.index * MOTION_SIZE],
+    };
+  }
+
   /** Let go of the followed object: the camera stays where it is. */
   private endFollow(): void {
     this.following = false;
+    if (this.chasing) {
+      this.chasing = false;
+      this.layersDirty = true;
+      this.setNearPlane(false);
+      // The hand took over: put the pitch limit back at once.
+      this.map?.setMaxPitch(MAX_PITCH);
+    }
     this.followFrom = null;
     const adjust = this.followAdjust;
     this.followAdjust = null;
@@ -1462,13 +1778,30 @@ export class HaloEngineImpl implements HaloEngine {
     ring.lat = lat;
     ring.alt = this.drawnAltitude(ref.kind, alt);
     // Only kinds drawn with a direction get a gap in their ring.
-    ring.heading = MOVERS[ref.kind] ? found.batch.motion[found.index * MOTION_SIZE] : Number.NaN;
+    const style = MOVERS[ref.kind];
+    ring.heading = style ? found.batch.motion[found.index * MOTION_SIZE] : Number.NaN;
+    // The ring sits clear of the silhouette it marks, however large that is drawn.
+    const base = ring === this.hoverRing ? HOVER_RING_PX : SELECT_RING_PX;
+    if (style) {
+      const s = found.index * STYLE_SIZE;
+      let half =
+        sizeAtZoom(this.map.getZoom(), style.sizeZoomRange, style.sizePixels) *
+        moverGlyphScale(style.glyph, found.batch.style[s], found.batch.style[s + 2]);
+      if (ref.kind === EntityKind.Aircraft && this.modelsIndex >= 0) {
+        // A 3D model is larger than the glyph it replaces: clear that instead.
+        half = Math.max(half, this.modelHalfPixels(found.batch, found.index, lon, lat));
+      }
+      ring.diameter = Math.min(Math.max(base, 2 * half + (base - 10)), RING_MAX_PX);
+    } else {
+      ring.diameter = base;
+    }
     ring.visible = true;
     return true;
   }
 
   private updateReticles(perfNow: number): void {
-    if (this.placeRing(this.selectRing, this.selection)) {
+    // In the 3D view the aircraft fills the screen: a ring round it is only in the way.
+    if (this.placeRing(this.selectRing, this.chasing ? null : this.selection)) {
       const t = this.reducedMotion ? 1 : clamp((perfNow - this.selectedAt) / SELECT_DRAW_MS, 0, 1);
       // Ease out: quick start, gentle close.
       this.selectRing.reveal = 1 - (1 - t) ** 3;

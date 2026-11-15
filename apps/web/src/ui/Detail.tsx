@@ -264,6 +264,7 @@ function Nearby({ items }: { items: NearbyEntity[] }) {
 
 function Actions({ detail }: { detail: EntityDetail }) {
   const following = useHalo((s) => s.following);
+  const chase = useHalo((s) => s.chase);
   const services = useServices();
   const [copied, setCopied] = useState(false);
 
@@ -287,6 +288,18 @@ function Actions({ detail }: { detail: EntityDetail }) {
 
   return (
     <div className="actions">
+      {detail.layer === "aircraft" ? (
+        <button
+          type="button"
+          className="btn actions-wide"
+          aria-pressed={chase}
+          aria-keyshortcuts="v"
+          onClick={() => haloActions().setChase(!chase)}
+        >
+          <Icon name="view-3d" />
+          {chase ? "Leave 3D view" : "3D view"}
+        </button>
+      ) : null}
       {canFollow(detail.layer) ? (
         <button
           type="button"

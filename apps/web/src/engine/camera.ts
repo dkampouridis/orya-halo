@@ -210,3 +210,89 @@ export function framingZoom(kind: EntityKind): number {
 export function orbitRate(zoom: number): number {
   return 1.8 * Math.min(1, 2 ** (2.5 - zoom));
 }
+
+/** MapLibre's sphere, metres. */
+const MAP_EARTH_RADIUS_M = 6_371_008.8;
+const MAP_EARTH_CIRCUMFERENCE_M = 2 * Math.PI * MAP_EARTH_RADIUS_M;
+/** Camera to map centre, in viewport heights: 0.5 / tan(fov / 2) for MapLibre's default field of view. */
+const CAMERA_DISTANCE_HEIGHTS = 0.5 / Math.tan((DEFAULT_FOV * DEG) / 2);
+
+/**
+ * The map camera for the 3D view: `distanceM` behind an aircraft along the
+ * line of sight, looking along `bearingDeg` at `pitchDeg` (MapLibre's pitch:
+ * 0 is straight down). Returns the map centre, where that line of sight
+ * meets the globe, and the zoom that puts the camera at that distance from
+ * it, so the aircraft sits exactly in the middle of the view.
+ *
+ * On a sphere, not a plane: the line of sight runs tens of kilometres to
+ * the ground, and over that distance the curve of the Earth (about 170 m at
+ * 47 km) moves a nearby aircraft right off the screen.
+ */
+export function chaseCamera(
+  lon: number,
+  lat: number,
+  altM: number,
+  bearingDeg: number,
+  pitchDeg: number,
+  distanceM: number,
+  viewportHeightPx: number,
+): { lon: number; lat: number; zoom: number; pitch: number; bearing: number } | null {
+  const lo = lon * DEG;
+  const la = lat * DEG;
+  const up: [number, number, number] = [
+    Math.cos(la) * Math.cos(lo),
+    Math.cos(la) * Math.sin(lo),
+    Math.sin(la),
+  ];
+  const east: [number, number, number] = [-Math.sin(lo), Math.cos(lo), 0];
+  const north: [number, number, number] = [
+    -Math.sin(la) * Math.cos(lo),
+    -Math.sin(la) * Math.sin(lo),
+    Math.cos(la),
+  ];
+  const b = bearingDeg * DEG;
+  const p = pitchDeg * DEG;
+  // Unit line of sight: forward along the bearing, down by the pitch.
+  const view = [0, 1, 2].map(
+    (i) => (east[i] * Math.sin(b) + north[i] * Math.cos(b)) * Math.sin(p) - up[i] * Math.cos(p),
+  );
+  const r = MAP_EARTH_RADIUS_M + Math.max(altM, 0);
+  const camera = [0, 1, 2].map((i) => up[i] * r - view[i] * distanceM);
+  // Where the line of sight meets the sphere: |camera + t view| = R, nearest root.
+  const cv = camera[0] * view[0] + camera[1] * view[1] + camera[2] * view[2];
+  const cc = camera[0] ** 2 + camera[1] ** 2 + camera[2] ** 2;
+  const disc = cv * cv - (cc - MAP_EARTH_RADIUS_M ** 2);
+  if (disc < 0) return null; // Looking past the horizon.
+  const t = -cv - Math.sqrt(disc);
+  if (!(t > 0)) return null;
+  const g = [0, 1, 2].map((i) => camera[i] + view[i] * t);
+  const gLat = Math.asin(clamp(g[2] / MAP_EARTH_RADIUS_M, -1, 1));
+  const gLon = Math.atan2(g[1], g[0]);
+  // MapLibre's scale at the centre matches Web Mercator's: metres per pixel there.
+  const metresPerPixel = t / (CAMERA_DISTANCE_HEIGHTS * Math.max(viewportHeightPx, 1));
+  const zoom = Math.log2((MAP_EARTH_CIRCUMFERENCE_M * Math.cos(gLat)) / (512 * metresPerPixel));
+  // MapLibre measures pitch and bearing at the centre, whose vertical leans
+  // away from the aircraft's by the arc between them (half a degree over
+  // 50 km), and that is hundreds of metres at the camera. So say them as
+  // the centre sees the line back to the camera.
+  const gUp = [Math.cos(gLat) * Math.cos(gLon), Math.cos(gLat) * Math.sin(gLon), Math.sin(gLat)];
+  const gEast = [-Math.sin(gLon), Math.cos(gLon), 0];
+  const gNorth = [
+    -Math.sin(gLat) * Math.cos(gLon),
+    -Math.sin(gLat) * Math.sin(gLon),
+    Math.cos(gLat),
+  ];
+  const back = [0, 1, 2].map((i) => camera[i] - g[i]);
+  const dot = (a: number[], v: number[]): number => a[0] * v[0] + a[1] * v[1] + a[2] * v[2];
+  const dUp = dot(back, gUp);
+  const dEast = dot(back, gEast);
+  const dNorth = dot(back, gNorth);
+  return {
+    lon: gLon / DEG,
+    lat: gLat / DEG,
+    zoom,
+    pitch: Math.atan2(Math.hypot(dEast, dNorth), dUp) / DEG,
+    // The camera looks from itself towards the centre: the opposite way.
+    bearing: Math.atan2(-dEast, -dNorth) / DEG,
+  };
+}

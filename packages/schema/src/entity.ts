@@ -124,7 +124,8 @@ export interface RenderBatch {
    */
   blend: Float32Array;
   /**
-   * `count * 4`: category, flags, value scaled to 0..255, spare.
+   * `count * 4`: category, flags, value scaled to 0..255, and for aircraft
+   * the 3D model id (`aircraftModelForType`, 0 when the type is not known).
    * The scale per kind: ship length / 400 m, satellite period / 1440 min,
    * earthquake magnitude / 10, fire log10(1 + MW) / 3; 0 for other kinds.
    */

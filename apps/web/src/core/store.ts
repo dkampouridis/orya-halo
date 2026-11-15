@@ -3,7 +3,7 @@
  * what the HUD shows (which layers are on, what is selected, the clock) and
  * the app controller mirrors changes to the engine and the data worker.
  */
-import { LAYERS } from "@orya-halo/schema";
+import { EntityKind, LAYERS } from "@orya-halo/schema";
 import type {
   ClockState,
   EntityDetail,
@@ -50,6 +50,8 @@ export interface HaloState {
   detail: EntityDetail | null;
   detailStatus: "idle" | "loading" | "ready" | "missing";
   following: boolean;
+  /** The 3D view: the camera rides behind the selected aircraft. Implies `following`. */
+  chase: boolean;
   hover: HoverState | null;
   /** History of the selection for the sparkline, or null when there is none. */
   trackSeries: TrackSeries | null;
@@ -90,6 +92,8 @@ export interface HaloActions {
   select(ref: EntityRef | null): void;
   setDetail(detail: EntityDetail | null, status: HaloState["detailStatus"]): void;
   setFollowing(following: boolean): void;
+  /** Ride behind the selected aircraft (or stop). Only aircraft can be chased. */
+  setChase(chase: boolean): void;
   setHover(hover: HoverState | null): void;
   setTrackSeries(series: TrackSeries | null): void;
   setStartError(message: string | null): void;
@@ -163,6 +167,7 @@ export const useHalo = create<HaloStore>()(
     detail: null,
     detailStatus: "idle",
     following: false,
+    chase: false,
     hover: null,
     trackSeries: null,
     startError: null,
@@ -214,11 +219,20 @@ export const useHalo = create<HaloStore>()(
             detail: null,
             detailStatus: ref ? "loading" : "idle",
             following: false,
+            chase: false,
             trackSeries: null,
           };
         }),
       setDetail: (detail, status) => set({ detail, detailStatus: status }),
-      setFollowing: (following) => set({ following: following && get().selection !== null }),
+      setFollowing: (following) => {
+        const on = following && get().selection !== null;
+        // Letting go of the object ends the 3D view with it.
+        set(on ? { following: true } : { following: false, chase: false });
+      },
+      setChase: (chase) => {
+        const on = chase && get().selection?.kind === EntityKind.Aircraft;
+        set(on ? { chase: true, following: true } : { chase: false });
+      },
       setHover: (hover) => set({ hover }),
       setTrackSeries: (trackSeries) => set({ trackSeries }),
       setStartError: (startError) => set({ startError }),

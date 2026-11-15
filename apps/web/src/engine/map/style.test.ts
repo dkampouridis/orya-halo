@@ -60,6 +60,8 @@ describe("buildStyle", () => {
   });
 
   it("switches MapLibre's own atmosphere off", () => {
-    expect(style.sky).toEqual({ "atmosphere-blend": 0 });
+    // MapLibre's atmosphere stays off (the engine draws the rim); the sky is the design's, not white.
+    expect(style.sky?.["atmosphere-blend"]).toBe(0);
+    expect(style.sky?.["horizon-color"]).not.toBe("#ffffff");
   });
 });

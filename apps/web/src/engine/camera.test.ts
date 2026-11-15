@@ -4,6 +4,7 @@ import {
   FLY_MAX_MS,
   FLY_MIN_MS,
   approach,
+  chaseCamera,
   flyDurationMs,
   followCentre,
   framingZoom,
@@ -221,5 +222,55 @@ describe("framingZoom and orbitRate", () => {
     expect(orbitRate(1)).toBeGreaterThan(0);
     expect(orbitRate(1)).toBeLessThanOrEqual(2);
     expect(orbitRate(6)).toBeLessThan(orbitRate(3));
+  });
+});
+
+describe("chaseCamera", () => {
+  const R = 6_371_008.8;
+  const groundDistance = (
+    a: { lon: number; lat: number },
+    b: { lon: number; lat: number },
+  ): number => {
+    const toRad = Math.PI / 180;
+    const dLat = (b.lat - a.lat) * toRad;
+    const dLon = (b.lon - a.lon) * toRad;
+    const h =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos(a.lat * toRad) * Math.cos(b.lat * toRad) * Math.sin(dLon / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(h));
+  };
+
+  it("looking straight down, centres on the aircraft", () => {
+    const cam = chaseCamera(4.5, 51, 11_000, 30, 0, 200, 800);
+    expect(cam).not.toBeNull();
+    expect(cam?.lon).toBeCloseTo(4.5, 6);
+    expect(cam?.lat).toBeCloseTo(51, 6);
+    // The camera is 11.2 km above the centre: 11.2 km / (1.5 x 800 px) a pixel.
+    const metresPerPixel =
+      (2 * Math.PI * R * Math.cos((51 * Math.PI) / 180)) / (512 * 2 ** (cam?.zoom ?? 0));
+    expect(metresPerPixel * 1.5 * 800).toBeCloseTo(11_200, -1);
+  });
+
+  it("pitched, puts the centre ahead along the bearing, where the line of sight meets the ground", () => {
+    const at = { lon: 4.5, lat: 51 };
+    const cam = chaseCamera(at.lon, at.lat, 11_000, 90, 76, 180, 800);
+    expect(cam).not.toBeNull();
+    if (!cam) return;
+    // Due east of the aircraft.
+    expect(cam.lat).toBeCloseTo(51, 0);
+    expect(cam.lon).toBeGreaterThan(at.lon);
+    // Flat-earth estimate: (height of the camera) x tan(pitch), less the bit
+    // already travelled behind the aircraft. The curve adds a little.
+    const flat =
+      (11_000 + 180 * Math.cos((76 * Math.PI) / 180)) * Math.tan((76 * Math.PI) / 180) -
+      180 * Math.sin((76 * Math.PI) / 180);
+    const d = groundDistance(at, cam);
+    expect(d).toBeGreaterThan(flat);
+    expect(d).toBeLessThan(flat * 1.05);
+  });
+
+  it("returns nothing when the line of sight misses the ground", () => {
+    // From 11 km the horizon is 3.4 degrees below level; 88 degrees of pitch looks above it.
+    expect(chaseCamera(4.5, 51, 11_000, 0, 88, 180, 800)).toBeNull();
   });
 });

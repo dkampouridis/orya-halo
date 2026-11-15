@@ -50,21 +50,47 @@ describes what is built; where the mockup and this text disagree, this text is c
 Layer accents are defined once, in `packages/schema/src/kinds.ts`, and written to the document
 root as `--accent-<layer>` when the HUD loads (`src/ui/accents.ts`); no stylesheet repeats them.
 
-| Layer             | Accent           | Glyph on the globe                                   |
-| ----------------- | ---------------- | ---------------------------------------------------- |
-| Aircraft          | `#4fe3ff` cyan   | Chevron pointing along track, short comet tail       |
-| Ships             | `#ffb224` amber  | Narrow hull shape pointing along course              |
-| Satellites        | `#b08cff` violet | Small diamond, faint orbit arc                       |
-| Earthquakes       | `#ff5247` red    | Ring that ripples outward, sized by magnitude        |
-| Undersea cables   | `#1fbfa3` teal   | Hairline paths                                       |
-| Rain radar        | `#6fa8ff`        | Raster overlay with its own intensity scale          |
-| Satellite imagery | `#9fb6c9`        | Raster overlay                                       |
-| Wildfires         | `#ff7a2b` ember  | Small flickerless dot, brighter with radiative power |
-| Webcams           | `#ffffff` white  | Point with a soft beacon halo                        |
-| Day and night     | `#ffd9a0`        | City lights and the terminator glow                  |
+| Layer             | Accent           | Glyph on the globe                                                                                            |
+| ----------------- | ---------------- | ------------------------------------------------------------------------------------------------------------- |
+| Aircraft          | `#4fe3ff` cyan   | Top-down silhouette by type (airliner, light aircraft, fast jet, helicopter), sized by type, short comet tail |
+| Ships             | `#ffb224` amber  | Hull with its bridge or superstructure where that type has it, sized by length; drawn at true length close in |
+| Satellites        | `#b08cff` violet | Body with a solar panel either side, along track; stations large, debris a speck; no tail                     |
+| Earthquakes       | `#ff5247` red    | Ring that ripples outward, sized by magnitude                                                                 |
+| Undersea cables   | `#1fbfa3` teal   | Hairline paths                                                                                                |
+| Rain radar        | `#6fa8ff`        | Raster overlay with its own intensity scale                                                                   |
+| Satellite imagery | `#9fb6c9`        | Raster overlay                                                                                                |
+| Wildfires         | `#ff7a2b` ember  | Small flickerless dot, brighter with radiative power                                                          |
+| Webcams           | `#ffffff` white  | Point with a soft beacon halo                                                                                 |
+| Day and night     | `#ffd9a0`        | City lights and the terminator glow                                                                           |
 
 Shape differs per layer as well as colour, so the layers stay distinguishable without colour
 vision.
+
+Movers are drawn like a vector plot on an instrument display: once a silhouette is about nine
+pixels across it has a bright rim about a pixel wide round a see-through body, with the
+ship's deckhouse or the satellite's body solid. Smaller than that, a silhouette is a solid
+mark; from orbit every mover becomes a point of light, so density reads as glow. Moored ships
+and aircraft on the ground keep only the rim, so a harbour reads differently from traffic
+under way. Small hulls are drawn fuller than ships are, so they read as hulls and not
+dashes, and take their true proportions only as they grow towards true scale. Sizes by
+category live in `GLYPH_SCALE` (`packages/layers/src/movers/movers-shaders.ts`), shared by
+the shaders and the selection ring, which grows to clear the silhouette it marks.
+
+Close in (from zoom 8.6 to 9.6) aircraft turn from glyphs into 3D models of their real types:
+the glyph fades out as the model fades in, keeping its trail and its click target. The models
+are generated from published dimensions (`packages/schema/src/aircraft-types.ts`: length,
+span, fuselage, wing sweep and chord, engines, tail layout; about 300 ICAO type codes over 35
+models, with a stand-in by ADS-B category when the type is not known), so an A380 is an A380
+and a Cessna a Cessna, in one plain light grey with no liveries. They bank in turns and pitch on
+climbs and descents, and are drawn larger than life (a 40 m airliner 48 px long) until true
+size can be seen, all by the same factor so relative sizes stay true.
+
+**3D view** (V, or the button in an aircraft's detail panel) rides behind the selected
+aircraft: the camera sits about four and a half aircraft-lengths behind and above it, turned
+22 degrees off its track for a three-quarter view, looking down at 76 degrees, so the horizon
+and sky are in the frame. The sky there is the design's (space above, a dim blue glow along
+the horizon, haze over the ground), not MapLibre's white. Any drag, a flight elsewhere, or V
+again leaves it.
 
 The Earth itself: dark and desaturated by day (land `#10151c`, water `#070b11`, lifted by up to
 1.6x toward the subsolar point so the terminator reads; land reaches about `#1a222d`),

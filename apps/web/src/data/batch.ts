@@ -28,6 +28,11 @@ export const MAX_BLEND_DEG = 0.3;
 /** Blend start time written for entities with nothing to ease, seconds before the epoch. */
 const NO_BLEND_S = -1e6;
 
+/** The `style[3]` byte for aircraft: the 3D model id (`aircraftModelForType`), 0 when unknown. */
+export function modelByte(value: number): number {
+  return value > 0 && value < 256 ? Math.trunc(value) : 0;
+}
+
 /**
  * The `style[2]` byte: a kind's scalar squeezed to 0..255 for the shader.
  * Ships: length, 0..400 m. Satellites: orbital period, 0..1440 min.
@@ -207,6 +212,7 @@ export class BatchBuilder {
       style[s] = category[i];
       style[s + 1] = flags[i];
       if (styled) style[s + 2] = styleValue(kind, value[i]);
+      else if (kind === EntityKind.Aircraft) style[s + 3] = modelByte(value[i]);
     }
 
     batch.ids.set(store.ids.subarray(0, n));

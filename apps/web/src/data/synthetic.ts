@@ -8,6 +8,7 @@
  * so a store that was emptied in between fills up again at once.
  */
 import {
+  aircraftModelForType,
   AircraftCategory,
   EARTH_RADIUS_M,
   EntityKind,
@@ -16,6 +17,13 @@ import {
   defineSource,
 } from "@orya-halo/schema";
 import type { EntityMeta, EntityUpdate, SourcePlugin } from "@orya-halo/schema";
+
+/** Plausible types for synthetic aircraft, by ADS-B category, so close in they draw as real models. */
+const SYNTHETIC_TYPES: Partial<Record<number, readonly string[]>> = {
+  [AircraftCategory.Heavy]: ["B77W", "A359", "B789", "A333", "B744", "A388"],
+  [AircraftCategory.Large]: ["A20N", "A320", "B738", "B38M", "A321", "E190", "BCS3", "CRJ9"],
+  [AircraftCategory.Light]: ["C172", "P28A", "SR22", "EC35", "PC12", "AT76", "DH8D"],
+};
 
 export const SYNTHETIC_AIRCRAFT_ID = "synthetic-aircraft";
 export const SYNTHETIC_SHIPS_ID = "synthetic-ships";
@@ -101,10 +109,12 @@ function createFleet(kind: EntityKind, count: number, seed: number, nowMs: numbe
           ? AircraftCategory.Heavy
           : AircraftCategory.Large
         : AircraftCategory.Light;
+      const types = SYNTHETIC_TYPES[fleet.category[i]] ?? ["A320"];
       fleet.meta.push({
         label: `SYN${String(1000 + (i % 9000))}`,
         registration: `X-${i.toString(36).toUpperCase()}`,
         typeName: "Synthetic aircraft",
+        typeCode: types[Math.floor(random() * types.length)],
       });
     } else {
       fleet.speed[i] = random() < 0.2 ? 0 : 3 + random() * 9;
@@ -163,7 +173,14 @@ function normaliseFleet(fleet: Fleet, source: string): EntityUpdate {
     columns.fixTimeMs[k] = fleet.fixTimeMs[i];
     columns.category[k] = fleet.category[i];
     const length = fleet.meta[i].lengthM;
-    columns.value[k] = typeof length === "number" ? length : 0;
+    const typeCode = fleet.meta[i].typeCode;
+    // An aircraft's value is the 3D model of its type, as the gateway path sets it from meta.
+    columns.value[k] =
+      typeof length === "number"
+        ? length
+        : typeof typeCode === "string"
+          ? aircraftModelForType(typeCode)
+          : 0;
   }
   const update: EntityUpdate = {
     kind: fleet.kind,

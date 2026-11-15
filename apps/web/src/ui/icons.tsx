@@ -30,6 +30,8 @@ const PATHS = {
   close: '<path d="M3.75 3.75l8.5 8.5M12.25 3.75l-8.5 8.5"/>',
   follow:
     '<path d="M10.7 2.92a5.75 5.75 0 1 1-5.4 0"/><path class="f" d="M8 4.75 10 10 8 8.9 6 10Z"/>',
+  // A camera's view down a track: what the 3D view shows.
+  "view-3d": '<path d="M2.25 13.25 6.5 3.75h3l4.25 9.5Z"/><path d="M8 3.75v9.5M4.4 9h7.2"/>',
   "copy-link": '<path d="M5.75 5.75h7.5v7.5h-7.5Z"/><path d="M10.25 5.5V2.75h-7.5v7.5H5.5"/>',
   north: '<path d="M8 1.75 10.25 8 8 14.25 5.75 8Z"/><path class="f" d="M8 1.75 10.25 8h-4.5Z"/>',
   plus: '<path d="M8 3v10M3 8h10"/>',

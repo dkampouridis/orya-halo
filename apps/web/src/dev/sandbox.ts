@@ -13,17 +13,28 @@
  *   layers=aircraft,ships,...        only these layers on; layers=all for every data layer
  *                                    (default: the layers the app starts with)
  *   select=aircraft                  select the object of that layer nearest the view centre
- *   follow=1, orbit=1
+ *   follow=1, orbit=1, chase=1 (the 3D view behind a selected aircraft)
  *   pad=top,right,bottom,left        camera padding in CSS pixels, as the HUD would set it
  *   credits=long   several long credits, to see the credit line wrap (default: one short one)
  *   overlay=radar  an animated raster overlay with thirteen frames; its tiles come from a
  *                  host that does not exist, so it only shows under scripts/check-overlays.mjs
  *   hud=0          hide the statistics readout
+ *   modelgrid=1    every 3D aircraft model in a row-by-row grid at the starting camera,
+ *                  all heading north-east, in place of the synthetic aircraft
+ *                  (modelgrid=bank adds a 25-degree bank and a climb to every other one)
  *
  * Keys: 1-0 toggle layers, F follow, O orbit, Q cycle quality, M reduced motion, L live/scrub.
  * `window.__halo` exposes the engine and frame statistics for scripts/shot.mjs.
  */
-import { EntityKind, LAYERS, LAYER_IDS, layerDef, layerForKind } from "@orya-halo/schema";
+import {
+  createRenderBatch,
+  AIRCRAFT_MODELS,
+  EntityKind,
+  LAYERS,
+  LAYER_IDS,
+  layerDef,
+  layerForKind,
+} from "@orya-halo/schema";
 import type { Attribution, EntityRef, LayerId, RenderBatch, TileOverlay } from "@orya-halo/schema";
 import type { HaloEngine, PickInfo, QualityTier } from "../core/engine.ts";
 import type { EngineStatus } from "../engine/status.ts";
@@ -202,8 +213,16 @@ async function main(): Promise<void> {
   });
 
   const latest = new Map<EntityKind, RenderBatch>();
+  const gridMode = params.get("modelgrid");
   const push = (): void => {
     for (const batch of world.batches(worldNow())) {
+      if (gridMode && batch.kind === EntityKind.Aircraft) {
+        const grid = modelGrid(num("lon", 0), num("lat", 0), worldNow(), gridMode === "bank");
+        latest.set(grid.kind, grid);
+        stats.counts.aircraft = grid.count;
+        engine.setBatch(grid);
+        continue;
+      }
       latest.set(batch.kind, batch);
       stats.counts[layerForKind(batch.kind).id] = batch.count;
       engine.setBatch(batch);
@@ -287,6 +306,8 @@ async function main(): Promise<void> {
     }
   }
   engine.setFollowing(following);
+  // chase=1: the 3D view behind the selected aircraft (needs select=aircraft).
+  if (params.get("chase") === "1") engine.setChase(true);
   engine.setOrbiting(orbiting);
 
   window.addEventListener("keydown", (e) => {
@@ -360,3 +381,31 @@ main().catch((error) => {
   const readout = document.getElementById("stats");
   if (readout) readout.textContent = `Engine failed to start: ${String(error)}`;
 });
+
+/**
+ * Every aircraft model once, in rows of seven 900 m apart around (lon, lat),
+ * heading 45 degrees at 1,000 m, standing still so the picture is steady.
+ */
+function modelGrid(lon: number, lat: number, nowMs: number, bank: boolean): RenderBatch {
+  const n = AIRCRAFT_MODELS.length;
+  const batch = createRenderBatch(EntityKind.Aircraft, n, nowMs, 1);
+  const metresPerDegLat = 111_320;
+  const metresPerDegLon = 111_320 * Math.cos((lat * Math.PI) / 180);
+  for (let i = 0; i < n; i++) {
+    const col = i % 7;
+    const row = Math.floor(i / 7);
+    batch.ids[i] = 900_000 + i;
+    batch.positions[i * 3] = lon + ((col - 3) * 900) / metresPerDegLon;
+    batch.positions[i * 3 + 1] = lat + ((2 - row) * 900) / metresPerDegLat;
+    batch.positions[i * 3 + 2] = 1000;
+    batch.motion[i * 4] = 45;
+    // A centimetre a second: still to the eye, but moving, so select=aircraft can pick one.
+    batch.motion[i * 4 + 1] = 0.01;
+    batch.motion[i * 4 + 2] = bank && i % 2 === 1 ? 8 : 0;
+    batch.motion[i * 4 + 3] = 0;
+    batch.blend[i * 3 + 2] = -1e6;
+    batch.style[i * 4] = 3;
+    batch.style[i * 4 + 3] = AIRCRAFT_MODELS[i].id;
+  }
+  return batch;
+}

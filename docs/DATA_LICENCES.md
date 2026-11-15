@@ -55,6 +55,12 @@ layer is visible.
 | GeoNames                       | Place names © GeoNames                                                                                                                                                                                          |
 | Open-Meteo                     | Weather data by Open-Meteo.com, linked, next to the data (once the app shows it)                                                                                                                                |
 
+## Aircraft models
+
+The 3D aircraft are generated in code from published dimensions (length, wingspan, fuselage
+width, wing sweep, engine layout), which are facts rather than anyone's design. No third-party
+3D model, livery or logo is used, so there is nothing to license or credit.
+
 ## Share-alike
 
 `apps/web/public/data/cables.bin` and the base map extract are databases derived from

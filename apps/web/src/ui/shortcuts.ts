@@ -11,6 +11,7 @@ export type ShortcutAction =
   | { type: "search" }
   | { type: "layer"; layer: LayerId }
   | { type: "follow" }
+  | { type: "chase" }
   | { type: "live" }
   | { type: "north" }
   | { type: "zoom"; delta: 1 | -1 }
@@ -44,6 +45,8 @@ export function resolveShortcut(input: KeyInput): ShortcutAction | null {
       return { type: "search" };
     case "f":
       return { type: "follow" };
+    case "v":
+      return { type: "chase" };
     case "l":
       return { type: "live" };
     case "n":
@@ -87,6 +90,9 @@ export function runShortcut(action: ShortcutAction): void {
       break;
     case "follow":
       if (state.selection) actions.setFollowing(!state.following);
+      break;
+    case "chase":
+      actions.setChase(!state.chase);
       break;
     case "live":
       if (state.clock.mode === "scrub") actions.goLive();
@@ -140,6 +146,7 @@ export const SHORTCUT_LIST: readonly { keys: readonly string[]; join?: string; d
   { keys: ["/"], does: "Search" },
   { keys: ["1", "0"], join: "to", does: "Turn a layer on or off, in dock order" },
   { keys: ["F"], does: "Follow the selected object" },
+  { keys: ["V"], does: "3D view behind the selected aircraft" },
   { keys: ["Esc"], does: "Close search, then clear the selection" },
   { keys: ["←", "→"], does: "Move through time, with the time tape focused" },
   { keys: ["L"], does: "Back to live" },

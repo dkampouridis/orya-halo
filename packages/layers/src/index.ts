@@ -3,6 +3,7 @@
  * with no per-object JavaScript; time-dependent motion is done in shaders.
  */
 export { MoversLayer } from "./movers/movers-layer.ts";
+export { GLYPH_SCALE, moverGlyphScale } from "./movers/movers-shaders.ts";
 export type { MoverGlyph, MoversLayerProps } from "./movers/movers-layer.ts";
 export { MarkersLayer, markersFromBatch, markersFromDensity } from "./markers/markers-layer.ts";
 export type { MarkerMode, MarkerSource, MarkersLayerProps } from "./markers/markers-layer.ts";
@@ -19,3 +20,11 @@ export {
   quakeRadiusPx,
   sizeAtZoom,
 } from "./maths.ts";
+export {
+  AircraftModelsLayer,
+  prepareAircraftMeshes,
+  warmAircraftModelsLayer,
+} from "./aircraft/aircraft-models-layer.ts";
+export type { AircraftModelsLayerProps } from "./aircraft/aircraft-models-layer.ts";
+export { buildAircraftMesh } from "./aircraft/aircraft-mesh.ts";
+export type { AircraftMesh } from "./aircraft/aircraft-mesh.ts";

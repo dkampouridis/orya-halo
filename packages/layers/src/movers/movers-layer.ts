@@ -75,13 +75,19 @@ export interface MoversLayerProps extends LayerProps {
   emergencyColor?: [number, number, number];
   /** Halve the emergency pulse rate. */
   slowMotion?: boolean;
+  /**
+   * Zoom range over which the glyph itself fades out, for a layer that draws
+   * something else in its place close in (aircraft as 3D models). The tail,
+   * the emergency ring and the picking area stay. Null keeps the glyph.
+   */
+  bodyFadeZoomRange?: [number, number] | null;
 }
 
 const defaultProps: DefaultProps<MoversLayerProps> = {
   batch: { type: "object", value: null, compare: 0 },
   getTimeMs: { type: "function", value: () => Date.now(), compare: false },
   color: { type: "array", value: [255, 255, 255] },
-  glyph: "chevron",
+  glyph: "aircraft",
   sizePixels: { type: "array", value: [3, 9] },
   sizeZoomRange: { type: "array", value: [2, 8] },
   sizeEase: 1.6,
@@ -95,6 +101,7 @@ const defaultProps: DefaultProps<MoversLayerProps> = {
   farZoomRange: { type: "array", value: [2.2, 4.4], optional: true },
   rankZoomRange: { type: "array", value: [3.4, 5.8], optional: true },
   farGain: 0.8,
+  bodyFadeZoomRange: { type: "array", value: null, optional: true },
   farDim: 0.3,
   farPointPixels: 0.9,
   spaceDim: 0,
@@ -237,6 +244,7 @@ export class MoversLayer extends Layer<Required<MoversLayerProps>> {
       pulse: (performance.now() % pulsePeriodMs) / pulsePeriodMs,
       color: toUnit(color),
       emergencyColor: toUnit(emergencyColor),
+      body: 1 - fadeIn(zoom, this.props.bodyFadeZoomRange),
     };
     model.shaderInputs.setProps({ movers: uniforms });
     model.draw(this.context.renderPass);
@@ -255,4 +263,11 @@ export class MoversLayer extends Layer<Required<MoversLayerProps>> {
       isInstanced: true,
     });
   }
+}
+
+/** 0 below the first zoom of `range`, 1 above the second, eased between; 0 without a range. */
+function fadeIn(zoom: number, range: [number, number] | null | undefined): number {
+  if (!range) return 0;
+  const t = Math.min(Math.max((zoom - range[0]) / (range[1] - range[0]), 0), 1);
+  return t * t * (3 - 2 * t);
 }

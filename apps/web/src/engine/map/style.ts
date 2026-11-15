@@ -20,6 +20,17 @@ export const EARTH = {
 } as const;
 
 export const BASEMAP_SOURCE = "protomaps";
+/** The sky as the style gives it: see where it is used. */
+export const SKY = {
+  "atmosphere-blend": 0,
+  "sky-color": "#03070e",
+  "horizon-color": "#1f3d63",
+  "fog-color": "#0b1524",
+  "sky-horizon-blend": 0.55,
+  "horizon-fog-blend": 0.65,
+  "fog-ground-blend": 0.4,
+} as const;
+
 /** The style layer the sky and night shading sit directly beneath: the first label layer. */
 export const FIRST_LABEL_LAYER = "water_waterway_label";
 
@@ -161,7 +172,10 @@ export function buildStyle(input: StyleInput): StyleSpecification {
     name: "Orya Halo",
     projection: { type: "globe" },
     // MapLibre's own atmosphere is switched off: the engine draws the rim itself.
-    sky: { "atmosphere-blend": 0 },
+    // The sky colours only show when the camera looks towards the horizon (the
+    // 3D view behind an aircraft): space above, a dim blue glow along the
+    // horizon, haze over the ground. MapLibre's defaults there are white.
+    sky: SKY,
     // No `glyphs` URL: MapLibre draws label glyphs in the browser from the
     // font files declared here, so there is no glyph server to depend on and
     // the map is set in the same Archivo as the interface. Scripts the files
