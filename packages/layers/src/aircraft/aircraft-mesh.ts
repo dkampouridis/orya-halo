@@ -10,13 +10,50 @@
  * run anticlockwise about the direction the loft grows in, which with the
  * triangle order below makes every face's normal point outwards, so the
  * shading is right without any per-face fixing.
+ *
+ * Every vertex also says which part it belongs to and where on that part it
+ * is (`colors` and `texCoords`, see `MeshPart`), so the shader can paint an
+ * airline's colours on it: belly and top, fin, engines, windows.
  */
 import type { AircraftModelSpec } from "@orya-halo/schema";
+
+/**
+ * The part a vertex belongs to, in its `colors` attribute's first value.
+ * The other two, and `texCoords`, place it on that part:
+ *
+ * - fuselages: `colors` = [part, sine of the angle round from the side (-1
+ *   keel, 1 top), distance from the nose / fuselage height]; `texCoords.x` =
+ *   0 where the tail cone ends, 1 where the nose cone begins (a helicopter's
+ *   cabin: 0 at its rear, 1 at the nose).
+ * - fins: `colors` = [part, height from root (0) to tip (1), chord from
+ *   leading (0) to trailing edge (1)].
+ * - other parts: [part, 0, 0].
+ */
+export const MeshPart = {
+  /** An airliner's fuselage, with a row of cabin windows. */
+  Fuselage: 0,
+  /** Wings, tailplanes and pylons. */
+  Wing: 1,
+  Fin: 2,
+  /** Engine nacelles and propeller spinners. */
+  Engine: 3,
+  /** Propeller and rotor blades, rotor masts, skids. */
+  Dark: 4,
+  Winglet: 5,
+  /** A light aircraft's fuselage: a glazed cabin, no window row. */
+  LightFuselage: 6,
+  /** A helicopter's cabin (glazed nose) and tail boom. */
+  Rotorcraft: 7,
+} as const;
+export type MeshPart = (typeof MeshPart)[keyof typeof MeshPart];
 
 export interface AircraftMesh {
   readonly attributes: {
     readonly positions: { readonly value: Float32Array; readonly size: 3 };
     readonly normals: { readonly value: Float32Array; readonly size: 3 };
+    /** Part and place on it, see `MeshPart`. */
+    readonly colors: { readonly value: Float32Array; readonly size: 3 };
+    readonly texCoords: { readonly value: Float32Array; readonly size: 2 };
   };
   readonly indices: { readonly value: Uint32Array; readonly size: 1 };
   /** Overall length, metres: what the engine scales by. */
@@ -24,22 +61,44 @@ export interface AircraftMesh {
 }
 
 type V3 = [number, number, number];
+/** Where a vertex is on its part: the two place values of `colors`, then `texCoords.x`. */
+type Tag = readonly [number, number, number];
+const NO_TAG: Tag = [0, 0, 0];
 
 const DEG = Math.PI / 180;
 
 class MeshBuilder {
   readonly positions: number[] = [];
   readonly indices: number[] = [];
+  readonly colors: number[] = [];
+  readonly texCoords: number[] = [];
+  /** The part the next lofts belong to. */
+  part: MeshPart = MeshPart.Wing;
+
+  private tagVertex(t: Tag): void {
+    this.colors.push(this.part, t[0], t[1]);
+    this.texCoords.push(t[2], 0);
+  }
 
   /**
    * Join rings of equal size into a tube, each ring anticlockwise about the
    * direction from the first ring to the last. `capStart` and `capEnd` close
-   * the ends with a fan.
+   * the ends with a fan. `tag` places each vertex on its part.
    */
-  loft(rings: readonly (readonly V3[])[], capStart = true, capEnd = true): void {
+  loft(
+    rings: readonly (readonly V3[])[],
+    capStart = true,
+    capEnd = true,
+    tag: (ring: number, k: number) => Tag = () => NO_TAG,
+  ): void {
     const n = rings[0].length;
     const base = this.positions.length / 3;
-    for (const ring of rings) for (const v of ring) this.positions.push(v[0], v[1], v[2]);
+    rings.forEach((ring, r) => {
+      ring.forEach((v, k) => {
+        this.positions.push(v[0], v[1], v[2]);
+        this.tagVertex(tag(r, k));
+      });
+    });
     for (let r = 0; r < rings.length - 1; r++) {
       for (let k = 0; k < n; k++) {
         const a = base + r * n + k;
@@ -49,15 +108,30 @@ class MeshBuilder {
         this.indices.push(a, b, c, b, d, c);
       }
     }
-    if (capStart) this.cap(base, n, rings[0], false);
-    if (capEnd) this.cap(base + (rings.length - 1) * n, n, rings[rings.length - 1], true);
+    const last = rings.length - 1;
+    if (capStart) this.cap(base, n, rings[0], false, (k) => tag(0, k));
+    if (capEnd) this.cap(base + last * n, n, rings[last], true, (k) => tag(last, k));
   }
 
-  private cap(first: number, n: number, ring: readonly V3[], forward: boolean): void {
+  private cap(
+    first: number,
+    n: number,
+    ring: readonly V3[],
+    forward: boolean,
+    tag: (k: number) => Tag,
+  ): void {
     const c: V3 = [0, 0, 0];
-    for (const v of ring) for (let i = 0; i < 3; i++) c[i] += v[i] / n;
+    const t: [number, number, number] = [0, 0, 0];
+    ring.forEach((v, k) => {
+      const tk = tag(k);
+      for (let i = 0; i < 3; i++) {
+        c[i] += v[i] / n;
+        t[i] += tk[i] / n;
+      }
+    });
     const centre = this.positions.length / 3;
     this.positions.push(c[0], c[1], c[2]);
+    this.tagVertex(t);
     for (let k = 0; k < n; k++) {
       const a = first + k;
       const b = first + ((k + 1) % n);
@@ -121,6 +195,8 @@ class MeshBuilder {
       attributes: {
         positions: { value: positions, size: 3 },
         normals: { value: normals, size: 3 },
+        colors: { value: new Float32Array(this.colors), size: 3 },
+        texCoords: { value: new Float32Array(this.texCoords), size: 2 },
       },
       indices: { value: indices, size: 1 },
       lengthM,
@@ -221,8 +297,10 @@ function wingPair(m: MeshBuilder, p: Planform, wingletM = 0): void {
       const f = (y - p.yRoot) / (p.halfSpan - p.yRoot);
       rings.push(wingSection(s.x, y, s.z, s.chord, p.thickness * (1 - 0.3 * f), mirror));
     }
+    m.part = MeshPart.Wing;
     m.loft(rings);
     if (wingletM > 0) {
+      m.part = MeshPart.Winglet;
       const tip = planformAt(p, p.halfSpan);
       const chord = tip.chord * 0.85;
       const sy = mirror ? -1 : 1;
@@ -241,6 +319,7 @@ function wingPair(m: MeshBuilder, p: Planform, wingletM = 0): void {
         section(base[2], chord, base[0]),
         section(base[2] + wingletM, chord * 0.45, base[0] - wingletM * Math.tan(38 * DEG)),
       ]);
+      m.part = MeshPart.Wing;
     }
   }
 }
@@ -271,7 +350,16 @@ function fin(
     ];
   };
   const tipLe = xLe - height * Math.tan(sweepDeg * DEG);
-  m.loft([section(xLe, zRoot, rootChord), section(tipLe, zRoot + height, tipChord)]);
+  const chordAt = [0, 0.3, 0.7, 1, 0.7, 0.3];
+  const part = m.part;
+  m.part = MeshPart.Fin;
+  m.loft(
+    [section(xLe, zRoot, rootChord), section(tipLe, zRoot + height, tipChord)],
+    true,
+    true,
+    (r, k) => [r, chordAt[k], 0],
+  );
+  m.part = part;
   return { tipLe, tipZ: zRoot + height, tipChord };
 }
 
@@ -283,7 +371,9 @@ function tube(
   radius: number,
   profile: readonly (readonly [number, number])[],
   n = 12,
+  part: MeshPart = MeshPart.Engine,
 ): void {
+  m.part = part;
   const rings = profile.map(([f, r]) =>
     ellipseRing(c[0] - length / 2 + f * length, c[2], radius * r, radius * r, n).map((v): V3 => [
       v[0],
@@ -292,6 +382,7 @@ function tube(
     ]),
   );
   m.loft(rings);
+  m.part = MeshPart.Wing;
 }
 
 const NACELLE: readonly (readonly [number, number])[] = [
@@ -310,6 +401,7 @@ const SPINNER: readonly (readonly [number, number])[] = [
 
 /** Propeller blades in the y-z plane at `c`, as thin boxes. */
 function propeller(m: MeshBuilder, c: V3, radius: number, blades: number): void {
+  m.part = MeshPart.Dark;
   for (let i = 0; i < blades; i++) {
     const a = (i / blades) * Math.PI * 2 + Math.PI / 4;
     const dir: V3 = [0, Math.cos(a), Math.sin(a)];
@@ -322,6 +414,7 @@ function propeller(m: MeshBuilder, c: V3, radius: number, blades: number): void 
       radius * 0.04,
     );
   }
+  m.part = MeshPart.Wing;
 }
 
 /** The model for one aircraft type. */
@@ -343,6 +436,9 @@ export function buildAircraftMesh(spec: AircraftModelSpec): AircraftMesh {
   const AROUND = 16;
   const centreZ = (u: number): number =>
     u < tailShare ? (1 - u / tailShare) ** 1.6 * upsweep * H : 0;
+  const sines: number[] = [];
+  for (let k = 0; k < AROUND; k++) sines.push(Math.sin((k / AROUND) * Math.PI * 2));
+  const cabin = 1 - noseShare - tailShare;
   for (let i = 0; i <= N; i++) {
     const u = i / N;
     let r = 1;
@@ -366,7 +462,12 @@ export function buildAircraftMesh(spec: AircraftModelSpec): AircraftMesh {
       ),
     );
   }
-  m.loft(rings);
+  m.part = short ? MeshPart.LightFuselage : MeshPart.Fuselage;
+  m.loft(rings, true, true, (i, k) => {
+    const u = i / N;
+    return [sines[k], ((1 - u) * L) / H, (u - tailShare) / cabin];
+  });
+  m.part = MeshPart.Wing;
 
   // ── Wings ──
   const halfSpan = spec.spanM / 2;
@@ -509,7 +610,10 @@ function buildHelicopter(spec: AircraftModelSpec): AircraftMesh {
       ),
     );
   }
-  m.loft(rings);
+  const heliSines: number[] = [];
+  for (let k = 0; k < 14; k++) heliSines.push(Math.sin((k / 14) * Math.PI * 2));
+  m.part = MeshPart.Rotorcraft;
+  m.loft(rings, true, true, (i, k) => [heliSines[k], 0, i / N]);
   // Tail boom to the back, with a small fin and tailplane.
   const boomR = W * 0.11;
   const boomLength = cabinStart + L / 2 + boomR;
@@ -523,6 +627,7 @@ function buildHelicopter(spec: AircraftModelSpec): AircraftMesh {
       [1, 1],
     ],
     8,
+    MeshPart.Rotorcraft,
   );
   fin(m, -L / 2 + 1.1, H * 0.12, spec.tail.finHeightM, 1.0, 0.6, 30);
   m.box(
@@ -533,6 +638,7 @@ function buildHelicopter(spec: AircraftModelSpec): AircraftMesh {
     0.08,
   );
   // Main rotor: four blades on a mast above the cabin.
+  m.part = MeshPart.Dark;
   const mast: V3 = [cabinStart + cabin * 0.45, 0, H / 2 + 0.35];
   m.box([mast[0], 0, H / 2 - 0.1], mast, [1, 0, 0], 0.25, 0.25);
   const R = (spec.rotorM ?? 10) / 2;

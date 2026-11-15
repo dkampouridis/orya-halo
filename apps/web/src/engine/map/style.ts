@@ -20,6 +20,21 @@ export const EARTH = {
 } as const;
 
 export const BASEMAP_SOURCE = "protomaps";
+
+/**
+ * The planet's surface from orbit: NASA's Blue Marble, cloud-free true colour
+ * with shaded relief and ocean depth, about 500 m a pixel (zoom 8), from GIBS.
+ * NASA imagery is open; the credit is NASA's and GIBS's (DATA_LICENCES.md).
+ * Closer in it would only be blur, so the dark street map takes over: the
+ * imagery fades out over EARTH_IMAGERY_FADE while the map's land and water
+ * fills fade in over the same zooms.
+ */
+export const EARTH_IMAGERY_SOURCE = "earth-imagery";
+export const EARTH_IMAGERY_TILES =
+  "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/BlueMarble_ShadedRelief_Bathymetry/default/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpeg";
+export const EARTH_IMAGERY_FADE: [number, number] = [8.5, 11];
+/** The street map's own fills, see-through from orbit so the imagery shows. */
+const SURFACE_FILLS = /^(earth|water|landuse_.*|landcover)$/;
 /** The sky as the style gives it: see where it is used. */
 export const SKY = {
   "atmosphere-blend": 0,
@@ -136,6 +151,23 @@ function haloFlavor(): Flavor {
 const DROPPED = new Set(["landcover", "pois", "roads_shields", "roads_oneway", "address_label"]);
 
 function tune(layer: LayerSpecification): LayerSpecification {
+  if (layer.type === "fill" && SURFACE_FILLS.test(layer.id)) {
+    return {
+      ...layer,
+      paint: {
+        ...layer.paint,
+        "fill-opacity": [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          EARTH_IMAGERY_FADE[0],
+          0,
+          EARTH_IMAGERY_FADE[1],
+          1,
+        ],
+      },
+    } as LayerSpecification;
+  }
   if (layer.type === "symbol" && layer.layout) {
     const layout: Record<string, unknown> = { ...layer.layout };
     // No sprite sheet is loaded, so icon references would only produce warnings.
@@ -166,6 +198,29 @@ export function buildStyle(input: StyleInput): StyleSpecification {
   const base = layers(BASEMAP_SOURCE, haloFlavor(), { lang: "en" })
     .filter((layer) => !DROPPED.has(layer.id))
     .map(tune);
+  // The imagery goes straight above the background, under every street-map layer.
+  const at = base.findIndex((layer) => layer.type !== "background");
+  base.splice(at < 0 ? 0 : at, 0, {
+    id: "earth-imagery",
+    type: "raster",
+    source: EARTH_IMAGERY_SOURCE,
+    paint: {
+      // Toned down a little so the interface over it stays the brightest thing.
+      "raster-brightness-max": 0.82,
+      "raster-saturation": -0.12,
+      "raster-contrast": 0.06,
+      "raster-fade-duration": 0,
+      "raster-opacity": [
+        "interpolate",
+        ["linear"],
+        ["zoom"],
+        EARTH_IMAGERY_FADE[0],
+        1,
+        EARTH_IMAGERY_FADE[1],
+        0,
+      ],
+    },
+  } as LayerSpecification);
 
   return {
     version: 8,
@@ -221,6 +276,13 @@ export function buildStyle(input: StyleInput): StyleSpecification {
         minzoom: 0,
         maxzoom: input.maxZoom,
         attribution: input.attribution,
+      },
+      [EARTH_IMAGERY_SOURCE]: {
+        type: "raster",
+        tiles: [EARTH_IMAGERY_TILES],
+        tileSize: 256,
+        minzoom: 0,
+        maxzoom: 8,
       },
     },
     layers: base,

@@ -37,7 +37,8 @@ The screenshots were taken with generated test traffic, not live positions.
 ## What you see
 
 From a country away, aircraft are drawn as 3D models of their real types (an A320, a 777, an ATR 72, a
-Cessna, a helicopter), built from published dimensions, and the 3D view rides behind one.
+Cessna, a helicopter), built from published dimensions and painted in simplified airline colour
+schemes picked by callsign, and the 3D view rides behind one.
 
 Every source was checked for terms that allow public display. The full table, with licences,
 rate limits and the exact credit each provider asks for, is in

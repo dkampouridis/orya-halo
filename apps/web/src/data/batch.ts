@@ -15,6 +15,7 @@ import {
   STYLE_SIZE,
   createRenderBatch,
   extrapolate,
+  splitAircraftValue,
 } from "@orya-halo/schema";
 import type { RenderBatch } from "@orya-halo/schema";
 import type { EntityStore } from "./store.ts";
@@ -30,7 +31,12 @@ const NO_BLEND_S = -1e6;
 
 /** The `style[3]` byte for aircraft: the 3D model id (`aircraftModelForType`), 0 when unknown. */
 export function modelByte(value: number): number {
-  return value > 0 && value < 256 ? Math.trunc(value) : 0;
+  return splitAircraftValue(value).model;
+}
+
+/** The `style[2]` byte for aircraft: the airline colour scheme (`aircraftLiveryForCallsign`), 0 when unknown. */
+export function liveryByte(value: number): number {
+  return splitAircraftValue(value).livery;
 }
 
 /**
@@ -212,7 +218,10 @@ export class BatchBuilder {
       style[s] = category[i];
       style[s + 1] = flags[i];
       if (styled) style[s + 2] = styleValue(kind, value[i]);
-      else if (kind === EntityKind.Aircraft) style[s + 3] = modelByte(value[i]);
+      else if (kind === EntityKind.Aircraft) {
+        style[s + 2] = liveryByte(value[i]);
+        style[s + 3] = modelByte(value[i]);
+      }
     }
 
     batch.ids.set(store.ids.subarray(0, n));

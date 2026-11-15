@@ -5,6 +5,7 @@
  * same `RenderBatch` shape, including blend offsets when a fix is corrected.
  */
 import {
+  AIRCRAFT_LIVERIES,
   aircraftModelForType,
   BLEND_SIZE,
   EARTH_RADIUS_M,
@@ -187,6 +188,12 @@ const SYNTHETIC_TYPES: readonly (readonly [string, number])[] = [
   ["C130", 1],
 ];
 const SYNTHETIC_TOTAL = SYNTHETIC_TYPES.reduce((sum, [, w]) => sum + w, 0);
+
+/** A stable airline colour scheme for a synthetic aircraft: a third neutral, the rest any scheme. */
+function syntheticLivery(id: number): number {
+  const u = (Math.imul(id ^ 0x27d4eb2f, 2654435761) >>> 0) % (AIRCRAFT_LIVERIES.length * 3);
+  return u < AIRCRAFT_LIVERIES.length ? 0 : u % AIRCRAFT_LIVERIES.length;
+}
 
 /** A stable aircraft type for a synthetic aircraft, as its model id. */
 function syntheticAircraftModel(id: number): number {
@@ -444,8 +451,10 @@ export class SyntheticWorld {
         batch.style[s + 1] = f.flags[i];
         if (f.kind === EntityKind.Ship)
           batch.style[s + 2] = shipLengthByte(f.category[i], batch.ids[i]);
-        if (f.kind === EntityKind.Aircraft)
+        if (f.kind === EntityKind.Aircraft) {
+          batch.style[s + 2] = syntheticLivery(batch.ids[i]);
           batch.style[s + 3] = syntheticAircraftModel(batch.ids[i]);
+        }
       }
       f.batch = batch;
       out.push(batch);

@@ -21,14 +21,17 @@
  *   hud=0          hide the statistics readout
  *   modelgrid=1    every 3D aircraft model in a row-by-row grid at the starting camera,
  *                  all heading north-east, in place of the synthetic aircraft
- *                  (modelgrid=bank adds a 25-degree bank and a climb to every other one)
+ *                  (modelgrid=bank adds a 25-degree bank and a climb to every other one;
+ *                  modelgrid=liveries is every airline colour scheme, all on the A320)
  *
  * Keys: 1-0 toggle layers, F follow, O orbit, Q cycle quality, M reduced motion, L live/scrub.
  * `window.__halo` exposes the engine and frame statistics for scripts/shot.mjs.
  */
 import {
   createRenderBatch,
+  AIRCRAFT_LIVERIES,
   AIRCRAFT_MODELS,
+  aircraftModelForType,
   EntityKind,
   LAYERS,
   LAYER_IDS,
@@ -217,7 +220,7 @@ async function main(): Promise<void> {
   const push = (): void => {
     for (const batch of world.batches(worldNow())) {
       if (gridMode && batch.kind === EntityKind.Aircraft) {
-        const grid = modelGrid(num("lon", 0), num("lat", 0), worldNow(), gridMode === "bank");
+        const grid = modelGrid(num("lon", 0), num("lat", 0), worldNow(), gridMode);
         latest.set(grid.kind, grid);
         stats.counts.aircraft = grid.count;
         engine.setBatch(grid);
@@ -383,11 +386,14 @@ main().catch((error) => {
 });
 
 /**
- * Every aircraft model once, in rows of seven 900 m apart around (lon, lat),
- * heading 45 degrees at 1,000 m, standing still so the picture is steady.
+ * Every aircraft model once (or, for "liveries", every colour scheme on the
+ * A320), in rows of seven 900 m apart around (lon, lat), heading 45 degrees
+ * at 1,000 m, standing still so the picture is steady.
  */
-function modelGrid(lon: number, lat: number, nowMs: number, bank: boolean): RenderBatch {
-  const n = AIRCRAFT_MODELS.length;
+function modelGrid(lon: number, lat: number, nowMs: number, mode: string): RenderBatch {
+  const bank = mode === "bank";
+  const liveries = mode === "liveries";
+  const n = liveries ? AIRCRAFT_LIVERIES.length : AIRCRAFT_MODELS.length;
   const batch = createRenderBatch(EntityKind.Aircraft, n, nowMs, 1);
   const metresPerDegLat = 111_320;
   const metresPerDegLon = 111_320 * Math.cos((lat * Math.PI) / 180);
@@ -405,7 +411,8 @@ function modelGrid(lon: number, lat: number, nowMs: number, bank: boolean): Rend
     batch.motion[i * 4 + 3] = 0;
     batch.blend[i * 3 + 2] = -1e6;
     batch.style[i * 4] = 3;
-    batch.style[i * 4 + 3] = AIRCRAFT_MODELS[i].id;
+    batch.style[i * 4 + 2] = liveries ? i : i % AIRCRAFT_LIVERIES.length;
+    batch.style[i * 4 + 3] = liveries ? aircraftModelForType("A320") : AIRCRAFT_MODELS[i].id;
   }
   return batch;
 }

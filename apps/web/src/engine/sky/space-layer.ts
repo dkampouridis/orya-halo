@@ -110,12 +110,20 @@ export class SpaceLayer implements CustomLayerInterface {
   private readonly vertices = new Float32Array(4 * FLOATS_PER_VERTEX);
   private readonly inverse = new Float64Array(16);
   private readonly state: SpaceLayerState;
-  private readonly lightsUrl: string;
+  private lightsUrl: string;
+  private readonly lightsUrlHd: string | null;
   private map: MapLibreMap | null = null;
 
-  constructor(state: SpaceLayerState, lightsUrl: string) {
+  /**
+   * `lightsUrlHd` is a larger lights image (8192 x 4096), used instead where
+   * the GPU takes textures that wide and the screen is not a phone's: it is
+   * 32 MB on the GPU (one channel, plus mipmaps), and a phone shows the night
+   * side too small to tell the difference.
+   */
+  constructor(state: SpaceLayerState, lightsUrl: string, lightsUrlHd: string | null = null) {
     this.state = state;
     this.lightsUrl = lightsUrl;
+    this.lightsUrlHd = lightsUrlHd;
   }
 
   /** True once the city lights image is on the GPU. */
@@ -138,6 +146,9 @@ export class SpaceLayer implements CustomLayerInterface {
    */
   loadLights(): Promise<void> {
     this.loading ??= (async () => {
+      // The engine asks for the lights before the map has a context, so the
+      // GPU's limit is read from a throwaway one.
+      if (this.lightsUrlHd && hdLightsFit()) this.lightsUrl = this.lightsUrlHd;
       try {
         const response = await fetch(this.lightsUrl);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -304,5 +315,18 @@ export class SpaceLayer implements CustomLayerInterface {
         v[o + 2] = (m[2] * x + m[6] * y + m[10] * z + m[14]) / w;
       }
     }
+  }
+}
+
+/** True where the larger lights image fits: a desktop-sized screen and a GPU that takes 8192-pixel textures. */
+function hdLightsFit(): boolean {
+  try {
+    if (Math.min(screen.width, screen.height) < 720) return false;
+    const gl = document.createElement("canvas").getContext("webgl2");
+    const max = gl ? (gl.getParameter(gl.MAX_TEXTURE_SIZE) as number) : 0;
+    gl?.getExtension("WEBGL_lose_context")?.loseContext();
+    return max >= 8192;
+  } catch {
+    return false;
   }
 }

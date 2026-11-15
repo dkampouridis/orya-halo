@@ -155,6 +155,10 @@ export default function About({ open }: { open: boolean }) {
           .
         </p>
         <p>
+          The Earth's surface is NASA's Blue Marble, served by NASA's Global Imagery Browse Services
+          (GIBS), part of NASA's Earth Science Data and Information System (ESDIS).
+        </p>
+        <p>
           Night lights are NASA's Black Marble 2016: NASA Earth Observatory images by Joshua
           Stevens, using Suomi NPP VIIRS data from Miguel Román, NASA GSFC. NASA does not endorse
           this project.
@@ -165,6 +169,11 @@ export default function About({ open }: { open: boolean }) {
           Aircraft photos come from{" "}
           <External href="https://www.planespotters.net/">Planespotters.net</External>, each
           credited to its photographer beside the photo.
+        </p>
+        <p>
+          The 3D aircraft are painted in simplified airline colour schemes chosen by callsign: a few
+          flat colours each, with no logos or names. They are not the airlines' liveries, and no
+          airline has made or endorsed them.
         </p>
       </section>
 

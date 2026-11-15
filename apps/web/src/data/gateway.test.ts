@@ -7,6 +7,8 @@ import {
   HEADER_BYTES,
   LAYER_IDS,
   UpstreamStatus,
+  aircraftLiveryForCallsign,
+  aircraftModelForType,
   encodeDensity,
   encodeEvents,
   encodeMeta,
@@ -14,6 +16,7 @@ import {
   encodeStats,
   encodeUpsert,
   inflateFrame,
+  splitAircraftValue,
   updateToUpsert,
 } from "@orya-halo/schema";
 import type {
@@ -274,11 +277,30 @@ describe("gateway client", () => {
     expect(Number.isNaN(store?.heading[store.indexOf(0x3c6444)] as number)).toBe(true);
     expect(store?.meta[i]).toEqual({ label: "RYR4TK", registration: "EI-DCL", typeCode: "B738" });
     expect(store?.ownerOf(i)).toBe(GATEWAY_SOURCE);
+    // An aircraft's value carries its type's 3D model and its airline's colours.
+    const ryanair = {
+      model: aircraftModelForType("B738"),
+      livery: aircraftLiveryForCallsign("RYR4TK"),
+    };
+    expect(ryanair.model).toBeGreaterThan(0);
+    expect(ryanair.livery).toBeGreaterThan(0);
+    expect(splitAircraftValue(store?.value[i] as number)).toEqual(ryanair);
+    expect(splitAircraftValue(store?.value[store.indexOf(0x400abc)] as number)).toEqual({
+      model: 0,
+      livery: aircraftLiveryForCallsign("BAW117"),
+    });
 
     // One batch for the tick, not one per frame.
     await vi.advanceTimersByTimeAsync(100);
     expect(h.batches(A)).toHaveLength(1);
     expect(h.batches(A)[0].count).toBe(3);
+    // ...which hands both to the renderer in the third and fourth style bytes.
+    const first = h.batches(A)[0];
+    const j = Array.from(first.ids).indexOf(0x4ca123);
+    expect([first.style[j * 4 + 2], first.style[j * 4 + 3]]).toEqual([
+      ryanair.livery,
+      ryanair.model,
+    ]);
     expect(h.layer("aircraft")).toMatchObject({ status: "live", count: 3 });
 
     // A delta: one moved, one is new.

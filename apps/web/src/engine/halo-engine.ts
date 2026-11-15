@@ -123,10 +123,17 @@ function binaryPaths(prepared: PreparedPaths): BinaryPaths {
 const HALO: Rgb = hexToRgb("#bcd9ff");
 const RIM: Rgb = hexToRgb(EARTH.rim);
 const LIGHTS_TEXTURE = "textures/black-marble-2016-01deg-gray.jpg";
+/** The same lights at 8192 x 4096 (about 5 km a pixel), for desktop GPUs; see SpaceLayer. */
+const LIGHTS_TEXTURE_HD = "textures/black-marble-2016-8k-gray.jpg";
 /** NASA asks to be acknowledged as the source of the Black Marble night lights (see scripts/fetch-textures.mjs). */
 const LIGHTS_CREDIT: Credit = {
   text: "Night lights: NASA Earth Observatory",
   url: "https://science.nasa.gov/earth/earth-observatory/earth-at-night/maps/",
+};
+/** NASA asks GIBS users to acknowledge it; the imagery is Blue Marble (see map/style.ts). */
+const IMAGERY_CREDIT: Credit = {
+  text: "Imagery: NASA Blue Marble, GIBS",
+  url: "https://nasa-gibs.github.io/gibs-api-docs/",
 };
 const DEG = Math.PI / 180;
 
@@ -580,7 +587,11 @@ export class HaloEngineImpl implements HaloEngine {
     this.refreshCredits();
     this.updateCreditLift();
 
-    this.space = new SpaceLayer(this.sky, joinAsset(options.assetBase, LIGHTS_TEXTURE));
+    this.space = new SpaceLayer(
+      this.sky,
+      joinAsset(options.assetBase, LIGHTS_TEXTURE),
+      joinAsset(options.assetBase, LIGHTS_TEXTURE_HD),
+    );
     this.mountDataCanvas();
 
     this.bindMapEvents();
@@ -1385,7 +1396,8 @@ export class HaloEngineImpl implements HaloEngine {
     }
     const lights = this.visible.nightlights ? [LIGHTS_CREDIT] : [];
     const base = this.tiles && (this.tiles.local || this.tiles.deep) ? BASEMAP_CREDITS : [];
-    this.creditLine.set(mergeCredits(this.credits, overlays, lights, base));
+    // The imagery is on screen at every zoom but street level, so it is always credited.
+    this.creditLine.set(mergeCredits(this.credits, overlays, lights, [IMAGERY_CREDIT], base));
   }
 
   /**

@@ -4,3 +4,4 @@ export * from "./protocol.ts";
 export * from "./source.ts";
 export * from "./runtime.ts";
 export * from "./aircraft-types.ts";
+export * from "./aircraft-liveries.ts";

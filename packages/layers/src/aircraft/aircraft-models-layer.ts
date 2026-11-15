@@ -11,13 +11,16 @@
  * with every aircraft scaled by the same factor, so an A380 still dwarfs an
  * A320 and a Cessna stays small, though never smaller than `minPixels`.
  *
+ * Each is painted in its airline's colour scheme (the batch's third style
+ * byte, see `aircraft-liveries.ts` in the schema), or a neutral grey.
+ *
  * Positions are worked out on the CPU each frame, so the layer only takes the
  * aircraft near the view (at most `maxModels`, nearest the centre first). The
  * engine shows it at zooms where that is a few hundred at most.
  */
 import { CompositeLayer } from "@deck.gl/core";
 import type { DefaultProps, Layer, LayerProps, UpdateParameters, Viewport } from "@deck.gl/core";
-import { SimpleMeshLayer } from "@deck.gl/mesh-layers";
+import type { Texture } from "@luma.gl/core";
 import {
   AIRCRAFT_MODELS,
   EntityFlag,
@@ -31,6 +34,7 @@ import type { RenderBatch } from "@orya-halo/schema";
 import { globeCommon, haloVisibility } from "../maths.ts";
 import { buildAircraftMesh } from "./aircraft-mesh.ts";
 import type { AircraftMesh } from "./aircraft-mesh.ts";
+import { LiveryMeshLayer, createLiveryPalette } from "./livery-mesh-layer.ts";
 
 const DEG = Math.PI / 180;
 const G = 9.81;
@@ -52,6 +56,8 @@ interface ScanState {
   list: number[];
   /** Types whose mesh layer has been made, kept (empty when unused) while this layer lives. */
   alive: Set<number>;
+  /** The airline colour schemes, one row each. */
+  palette: Texture | null;
 }
 /** At true scale, a model smaller than this on screen is not drawn. */
 const MIN_VISIBLE_PX = 2;
@@ -71,19 +77,18 @@ export interface AircraftModelsLayerProps extends LayerProps {
   /** No model is drawn shorter than this, pixels. */
   minPixels?: number;
   maxModels?: number;
-  color?: [number, number, number];
-  /** Id drawn in `selectedColor`. */
+  /** Id drawn a little brighter. */
   selectedId?: number | null;
   /** Extra scale for the selected aircraft, on top of the rest (the 3D view's close-up). */
   selectedScale?: number;
-  selectedColor?: [number, number, number];
 }
 
 interface Placed {
   position: [number, number, number];
   orientation: [number, number, number];
   scale: [number, number, number];
-  selected: boolean;
+  /** The colour scheme's row in the palette in red, "selected" in green. */
+  color: [number, number, number, number];
 }
 
 const defaultProps: DefaultProps<AircraftModelsLayerProps> = {
@@ -94,10 +99,8 @@ const defaultProps: DefaultProps<AircraftModelsLayerProps> = {
   targetPixels: { type: "number", value: 48 },
   minPixels: { type: "number", value: 22 },
   maxModels: { type: "number", value: 400 },
-  color: { type: "color", value: [226, 236, 242] },
   selectedId: { type: "object", value: null },
   selectedScale: { type: "number", value: 1 },
-  selectedColor: { type: "color", value: [255, 255, 255] },
 };
 
 /** One mesh per model, built on first use and kept: they never change. */
@@ -129,8 +132,14 @@ export class AircraftModelsLayer extends CompositeLayer<Required<AircraftModelsL
       found: new Set(),
       list: [],
       alive: new Set(),
+      palette: createLiveryPalette(this.context.device),
     };
     this.setState(state);
+  }
+
+  override finalizeState(context: Parameters<CompositeLayer["finalizeState"]>[0]): void {
+    super.finalizeState(context);
+    (this.state as unknown as ScanState).palette?.destroy();
   }
 
   override shouldUpdateState({ changeFlags }: UpdateParameters<this>): boolean {
@@ -279,7 +288,7 @@ export class AircraftModelsLayer extends CompositeLayer<Required<AircraftModelsL
         // are `-east` and `-north`), so there the yaw is half a turn more.
         orientation: [-clamp(climb, -15, 15), (globe ? 270 : 90) - hdg, clamp(bank, -30, 30)],
         scale: [k, k, k],
-        selected,
+        color: [batch.style[s + 2], selected ? 255 : 0, 0, 255],
       });
     }
 
@@ -295,21 +304,21 @@ export class AircraftModelsLayer extends CompositeLayer<Required<AircraftModelsL
       scan.alive.add(id);
     }
     const layers: Layer[] = [];
-    const { color, selectedColor } = this.props;
     for (const id of scan.alive) {
       const placed = groups.get(id) ?? NONE;
       const mesh = meshFor(id);
       if (!mesh) continue;
       layers.push(
-        new SimpleMeshLayer<Placed>(
+        new LiveryMeshLayer<Placed>(
           this.getSubLayerProps({
             id: `model-${id}`,
             data: placed,
             mesh,
+            texture: scan.palette,
             getPosition: (d: Placed) => d.position,
             getOrientation: (d: Placed) => d.orientation,
             getScale: (d: Placed) => d.scale,
-            getColor: (d: Placed) => (d.selected ? selectedColor : color),
+            getColor: (d: Placed) => d.color,
             material: {
               ambient: 0.42,
               diffuse: 0.62,
@@ -358,7 +367,7 @@ export function prepareAircraftMeshes(timeLeft: () => number): boolean {
  */
 export function warmAircraftModelsLayer(id: string): Layer {
   const mesh = meshFor(AIRCRAFT_MODELS[1].id) as AircraftMesh;
-  return new SimpleMeshLayer<number>({
+  return new LiveryMeshLayer<number>({
     id,
     data: [0],
     mesh,

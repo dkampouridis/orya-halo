@@ -15,6 +15,15 @@
 // Credit: NASA Earth Observatory images by Joshua Stevens, using Suomi NPP
 // VIIRS data from Miguel Román, NASA GSFC.
 //
+// The larger texture, black-marble-2016-8k-gray.jpg (8192 x 4096, about 1.3 MB),
+// is committed and not fetched here. It was made from the same page's 3 km
+// grayscale original,
+//   https://assets.science.nasa.gov/content/dam/science/esd/eo/images/imagerecords/144000/144897/BlackMarble_2016_3km_gray.jpg
+// (13500 x 6750), by drawing it onto an 8192 x 4096 canvas in a browser with
+// imageSmoothingQuality "high" and saving it as JPEG at quality 0.9. 8192 is
+// the largest texture most desktop GPUs accept; SpaceLayer only loads it where
+// the GPU reports at least that.
+//
 // Why one equirectangular image and not NASA GIBS tiles: the lights are only
 // shown from orbit and fade out by zoom 8, where 0.1 degree is enough, and
 // GIBS serves its tiles with `Cache-Control: no-store`, so every visitor would

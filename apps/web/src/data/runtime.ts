@@ -11,7 +11,9 @@
  * view change, a keyframe falling due) and the runtime is idle in between.
  */
 import {
+  aircraftLiveryForCallsign,
   aircraftModelForType,
+  aircraftValue,
   ENTITY_KINDS,
   EntityKind,
   LAYERS,
@@ -859,9 +861,22 @@ export class DataRuntime implements DataWorkerApi {
       const length = Number(meta.lengthM);
       if (Number.isFinite(length)) state.store.setValue(id, length);
       if (state.store.changed) this.scheduleBatch(state);
-    } else if (state.store.kind === EntityKind.Aircraft && meta.typeCode !== undefined) {
-      // An aircraft's is the 3D model of its type (0 when the type is not known).
-      state.store.setValue(id, aircraftModelForType(String(meta.typeCode)));
+    } else if (
+      state.store.kind === EntityKind.Aircraft &&
+      (meta.typeCode !== undefined || meta.label !== undefined)
+    ) {
+      // An aircraft's is the 3D model of its type and its airline's colours
+      // (each 0 when not known), from all it has told us so far.
+      const merged = state.store.meta[state.store.indexOf(id)] ?? meta;
+      const type = merged.typeCode;
+      const callsign = merged.label;
+      state.store.setValue(
+        id,
+        aircraftValue(
+          aircraftModelForType(type == null ? null : String(type)),
+          aircraftLiveryForCallsign(callsign == null ? null : String(callsign)),
+        ),
+      );
       if (state.store.changed) this.scheduleBatch(state);
     }
   }

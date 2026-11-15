@@ -29,7 +29,7 @@ import {
   createRenderBatch,
 } from "@orya-halo/schema";
 import type { RenderBatch } from "@orya-halo/schema";
-import { modelByte, styleValue } from "./batch.ts";
+import { liveryByte, modelByte, styleValue } from "./batch.ts";
 import { IdMap } from "./idmap.ts";
 import type { EntityStore } from "./store.ts";
 
@@ -488,7 +488,10 @@ export class HistoryRing {
       style[o] = this.slotCategory[s];
       style[o + 1] = this.slotFlags[s];
       style[o + 2] = styleValue(kind, this.slotValue[s]);
-      if (kind === EntityKind.Aircraft) style[o + 3] = modelByte(this.slotValue[s]);
+      if (kind === EntityKind.Aircraft) {
+        style[o + 2] = liveryByte(this.slotValue[s]);
+        style[o + 3] = modelByte(this.slotValue[s]);
+      }
       values[j] = this.slotValue[s];
       j++;
     }

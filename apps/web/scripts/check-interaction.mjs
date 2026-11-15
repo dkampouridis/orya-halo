@@ -431,7 +431,7 @@ try {
   check(
     "setCredits puts the data credits before the base map's own, once each",
     texts.join(" | ") ===
-      "Aircraft: a test feed | No web address | Night lights: NASA Earth Observatory | Protomaps | © OpenStreetMap",
+      "Aircraft: a test feed | No web address | Night lights: NASA Earth Observatory | Imagery: NASA Blue Marble, GIBS | Protomaps | © OpenStreetMap",
     texts.join(" | "),
   );
   check(

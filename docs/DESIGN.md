@@ -81,7 +81,11 @@ the glyph fades out as the model fades in, keeping its trail and its click targe
 are generated from published dimensions (`packages/schema/src/aircraft-types.ts`: length,
 span, fuselage, wing sweep and chord, engines, tail layout; about 300 ICAO type codes over 35
 models, with a stand-in by ADS-B category when the type is not known), so an A380 is an A380
-and a Cessna a Cessna, in one plain light grey with no liveries. They bank in turns and pitch on
+and a Cessna a Cessna. Each is painted in its airline's colour scheme, picked by the callsign's
+ICAO prefix (`packages/schema/src/aircraft-liveries.ts`: about 30 airlines): top and belly
+colours, the fin with an optional second colour, engines, plus cabin windows and flight-deck
+glass drawn in the shader. No logos, names or artwork, only flat colours; aircraft with no
+known airline stay the app's light grey. They bank in turns and pitch on
 climbs and descents, and are drawn larger than life (a 40 m airliner 26 px long from a country away,
 48 px close in) until true size can be seen, all by the same factor so relative sizes stay
 true. At most 3,000 are drawn (800 on the balanced tier, none on the cheapest), nearest the
@@ -97,7 +101,14 @@ dragging turns it round the aircraft (sideways) or lifts it towards looking stra
 the horizon, haze over the ground), not MapLibre's white. Satellites are hidden in the 3D view: along the horizon
 they would fill the sky. V again, the button, or flying elsewhere leaves it.
 
-The Earth itself: dark and desaturated by day (land `#10151c`, water `#070b11`, lifted by up to
+The Earth's surface, from orbit down to regional zoom, is NASA's Blue Marble (shaded relief and
+bathymetry, from NASA GIBS tiles to zoom 8), toned slightly down (brightness to 82%, saturation
+-12%) so the data layers stay on top of it. Between zoom 8.5 and 11 it fades into the vector base
+map, whose own land and water fills fade in over the same range, so street level is the flat map.
+Night lights use an 8192 x 4096 texture on desktop GPUs that allow it, and a 3600 x 1800 one
+elsewhere.
+
+The vector base map's own colours: dark and desaturated by day (land `#10151c`, water `#070b11`, lifted by up to
 1.6x toward the subsolar point so the terminator reads; land reaches about `#1a222d`),
 near-black at night (land about `#05070a`, water `#020204`) with warm city lights (`#ffd9a0`),
 and a soft terminator band between them. Borders are ice-white at 20% by day and 7% at night,
