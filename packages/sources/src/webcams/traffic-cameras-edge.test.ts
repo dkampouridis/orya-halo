@@ -310,6 +310,18 @@ describe("attribution, licence and polling", () => {
     expect(pollsPer10s).toBeLessThan(0.1);
   });
 
+  // BUG: the app's controller reloads an open panel's detail every 2 s
+  // (DETAIL_REFRESH_MS in apps/web/src/app/controller.ts), and each reload runs
+  // this lookup again: one open Singapore panel fetches the whole list every
+  // 2 s, 6 requests in a 10 s window, which is data.gov.sg's whole keyless
+  // allowance. DATA_LICENCES.md promises "once when a camera is selected".
+  test.fails("Singapore's camera lookup is reused while the panel stays open", async () => {
+    const meta = sgCameras(sgFeed())[0].meta;
+    const c = fakeContext({ [SG_TRAFFIC_IMAGES_API]: sgBody });
+    for (let i = 0; i < 5; i++) await sgLtaTrafficCameras.detail?.(1, meta, c);
+    expect(c.requests.length).toBe(1);
+  });
+
   test("the poll intervals are the ones docs/DATA_LICENCES.md promises the providers", () => {
     // "we ask every 5 minutes", "every 6 hours", "once an hour", "once an hour".
     expect(sgLtaTrafficCameras.refreshRate).toBe(5 * 60_000);
