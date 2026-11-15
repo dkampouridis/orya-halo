@@ -1,0 +1,33 @@
+{
+  "alt": 0,
+  "attribution": {
+    "text": "Simulated traffic, not real ships",
+    "url": ""
+  },
+  "category": 1,
+  "fixTimeMs": 1794676328655,
+  "flags": 1,
+  "heading": 255.15,
+  "id": 200000273,
+  "kind": 2,
+  "lat": 22.3043475,
+  "layer": "ships",
+  "lon": 114.0551598,
+  "meta": {
+    "label": "MOCK VESSEL 21",
+    "lengthM": "274",
+    "navStatus": "Moored",
+    "source": "mock-ships"
+  },
+  "source": "mock-ships",
+  "speed": 0,
+  "track": [
+    [
+      114.0551598,
+      22.3043475,
+      0,
+      1794676328000
+    ]
+  ],
+  "vrate": 0
+}

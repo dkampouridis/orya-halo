@@ -1,0 +1,34 @@
+{
+  "alt": 11849.1,
+  "attribution": {
+    "text": "Simulated traffic, not real aircraft",
+    "url": ""
+  },
+  "category": 2,
+  "fixTimeMs": 1794676339653,
+  "flags": 0,
+  "heading": 271.91,
+  "id": 4194307,
+  "kind": 1,
+  "lat": 38.142486,
+  "layer": "aircraft",
+  "lon": -32.606203,
+  "meta": {
+    "label": "BAW2478",
+    "registration": "M-0001",
+    "source": "mock-aircraft",
+    "squawk": "2000",
+    "typeCode": "AT76"
+  },
+  "source": "mock-aircraft",
+  "speed": 214.2,
+  "track": [
+    [
+      -32.5792751,
+      38.1417754,
+      11849.1,
+      1794676328000
+    ]
+  ],
+  "vrate": 0
+}

@@ -1,0 +1,5 @@
+# The bundled satellite snapshot is CelesTrak's file byte for byte; keep LF on every platform.
+apps/web/public/data/satellites.csv -text
+# Golden protocol fixtures and baked data are binary.
+*.bin binary
+*.pmtiles binary

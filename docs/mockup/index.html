@@ -1,0 +1,495 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#000000" />
+    <title>Orya Halo</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <!-- Mockup only: the app self-hosts both families through Fontsource. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Martian+Mono:wdth,wght@75..112.5,100..800&display=block"
+    />
+    <link rel="stylesheet" href="mockup.css" />
+  </head>
+  <body data-state="default">
+    <canvas id="globe" aria-hidden="true"></canvas>
+
+    <!-- Marks drawn over the globe: the halo reticle, the hover ring, the quake ripple. -->
+    <svg id="marks" aria-hidden="true">
+      <g id="ripple" class="ripple">
+        <circle r="6" />
+        <circle r="6" />
+      </g>
+      <g id="hover-ring" class="hover-ring"><path d="M7.95 4.23A9 9 0 1 1 7.95-4.23" /></g>
+      <g id="reticle" class="reticle"><path d="M12.36 6.57A14 14 0 1 1 12.36-6.57" /></g>
+    </svg>
+    <button
+      id="pick"
+      class="pick"
+      type="button"
+      aria-label="Select BAW115, British Airways to New York"
+    ></button>
+    <div id="tag" class="tag" role="tooltip">
+      <span class="tag-name">ISS (Zarya)</span>
+      <span class="num">418</span><span class="unit">km</span>
+    </div>
+
+    <main class="hud">
+      <!-- On space, no container -->
+      <a class="brand" href="#default" aria-label="Orya Halo">
+        <svg class="brand-ring" viewBox="0 0 20 20" width="20" height="20" aria-hidden="true">
+          <defs>
+            <linearGradient id="limb" x1="0.1" y1="0.15" x2="0.75" y2="0.8">
+              <stop offset="0" stop-color="#eaf3ff" />
+              <stop offset="0.45" stop-color="#bcd9ff" />
+              <stop offset="0.8" stop-color="#bcd9ff" stop-opacity="0" />
+            </linearGradient>
+          </defs>
+          <circle
+            cx="10"
+            cy="10"
+            r="8.6"
+            fill="none"
+            stroke="#e9eff6"
+            stroke-opacity="0.3"
+            stroke-width="1.25"
+          />
+          <circle cx="10" cy="10" r="8.6" fill="none" stroke="url(#limb)" stroke-width="1.6" />
+        </svg>
+        <span class="brand-name">orya halo</span>
+      </a>
+
+      <div class="status" aria-live="off">
+        <p class="status-item">
+          <span class="num" id="clock">19:42:07</span><span class="unit">utc</span>
+        </p>
+        <p class="status-item status-count">
+          <span class="num" id="total">34,574</span><span class="unit" id="total-unit">live</span>
+        </p>
+      </div>
+
+      <!-- Search: the only pill -->
+      <div class="search" role="search">
+        <label class="search-field glass">
+          <span class="search-icon" data-icon="search"></span>
+          <input
+            id="q"
+            type="text"
+            autocomplete="off"
+            spellcheck="false"
+            placeholder="Search flights, ships, satellites, places"
+            aria-label="Search flights, ships, satellites, places"
+            role="combobox"
+            aria-expanded="false"
+            aria-controls="results"
+          />
+          <kbd class="key search-key">/</kbd>
+        </label>
+        <div id="results" class="results glass" role="listbox" aria-label="Search results">
+          <div class="group" role="group" aria-labelledby="g-aircraft">
+            <p class="group-name" id="g-aircraft">
+              <i class="lamp" style="--accent: var(--accent-aircraft)"></i>Aircraft
+            </p>
+            <div class="result" role="option" aria-selected="true">
+              <span class="result-name">DAL30</span>
+              <span class="result-sub">Delta, Atlanta to London Heathrow</span>
+              <span class="result-num"
+                ><span class="num">11,278</span><span class="unit">m</span></span
+              >
+            </div>
+            <div class="result" role="option" aria-selected="false">
+              <span class="result-name">GTI8102</span>
+              <span class="result-sub">Atlas Air, Boeing 747-8F</span>
+              <span class="result-num"
+                ><span class="num">10,363</span><span class="unit">m</span></span
+              >
+            </div>
+          </div>
+          <div class="group" role="group" aria-labelledby="g-ships">
+            <p class="group-name" id="g-ships">
+              <i class="lamp" style="--accent: var(--accent-ships)"></i>Ships
+            </p>
+            <div class="result" role="option" aria-selected="false">
+              <span class="result-name">Atlantic Star</span>
+              <span class="result-sub">Container ship, bound for Halifax</span>
+              <span class="result-num"
+                ><span class="num">17.4</span><span class="unit">kt</span></span
+              >
+            </div>
+            <div class="result" role="option" aria-selected="false">
+              <span class="result-name">Atlantic Sail</span>
+              <span class="result-sub">Container ship, bound for Liverpool</span>
+              <span class="result-num"
+                ><span class="num">16.8</span><span class="unit">kt</span></span
+              >
+            </div>
+            <div class="result" role="option" aria-selected="false">
+              <span class="result-name">Atlantic Sky</span>
+              <span class="result-sub">Container ship, moored at Hamburg</span>
+              <span class="result-num"
+                ><span class="num">0.0</span><span class="unit">kt</span></span
+              >
+            </div>
+          </div>
+          <div class="group" role="group" aria-labelledby="g-sats">
+            <p class="group-name" id="g-sats">
+              <i class="lamp" style="--accent: var(--accent-satellites)"></i>Satellites
+            </p>
+            <div class="result" role="option" aria-selected="false">
+              <span class="result-name">Atlas 5 Centaur R/B</span>
+              <span class="result-sub">Rocket body, low Earth orbit</span>
+              <span class="result-num"
+                ><span class="num">612</span><span class="unit">km</span></span
+              >
+            </div>
+          </div>
+          <div class="group" role="group" aria-labelledby="g-places">
+            <p class="group-name" id="g-places"><i class="lamp lamp-off"></i>Places</p>
+            <div class="result" role="option" aria-selected="false">
+              <span class="result-name">Atlanta</span>
+              <span class="result-sub">Georgia, United States</span>
+            </div>
+            <div class="result" role="option" aria-selected="false">
+              <span class="result-name">Atlantic City</span>
+              <span class="result-sub">New Jersey, United States</span>
+            </div>
+          </div>
+          <p class="results-hint">
+            <span><kbd class="key">↑</kbd><kbd class="key">↓</kbd> to move</span>
+            <span><kbd class="key">Enter</kbd> to fly there</span>
+            <span><kbd class="key">Esc</kbd> to close</span>
+          </p>
+        </div>
+      </div>
+
+      <!-- Layer dock -->
+      <nav class="dock glass" aria-label="Layers">
+        <ul class="dock-rows">
+          <li>
+            <button
+              class="row"
+              type="button"
+              aria-pressed="true"
+              data-layer="aircraft"
+              data-gateway
+            >
+              <i class="lamp"></i><span class="row-icon" data-icon="aircraft"></span>
+              <span class="row-name">Aircraft</span><span class="row-count num">12,410</span
+              ><span class="row-state row-offline warn">Offline</span>
+            </button>
+          </li>
+          <li>
+            <button
+              class="row"
+              type="button"
+              aria-pressed="true"
+              data-layer="ships"
+              data-gateway
+              data-status="degraded"
+              aria-describedby="note-ships"
+            >
+              <i class="lamp"></i><span class="row-icon" data-icon="ships"></span>
+              <span class="row-name">Ships</span><span class="row-count num">8,221</span
+              ><span class="row-state row-offline warn">Offline</span>
+            </button>
+            <p class="row-note warn" id="note-ships">Positions are 2 min old. Reconnecting.</p>
+          </li>
+          <li>
+            <button class="row" type="button" aria-pressed="true" data-layer="satellites">
+              <i class="lamp"></i><span class="row-icon" data-icon="satellites"></span>
+              <span class="row-name">Satellites</span><span class="row-count num">13,906</span>
+            </button>
+          </li>
+          <li>
+            <button class="row" type="button" aria-pressed="true" data-layer="quakes">
+              <i class="lamp"></i><span class="row-icon" data-icon="quakes"></span>
+              <span class="row-name">Earthquakes</span><span class="row-count num">37</span>
+            </button>
+          </li>
+          <li>
+            <button class="row" type="button" aria-pressed="true" data-layer="cables">
+              <i class="lamp"></i><span class="row-icon" data-icon="cables"></span>
+              <span class="row-name">Undersea cables</span><span class="row-count num">587</span>
+            </button>
+          </li>
+          <li>
+            <button class="row" type="button" aria-pressed="false" data-layer="radar">
+              <i class="lamp"></i><span class="row-icon" data-icon="radar"></span>
+              <span class="row-name">Rain radar</span><span class="row-count num"></span>
+            </button>
+          </li>
+          <li>
+            <button class="row" type="button" aria-pressed="false" data-layer="imagery">
+              <i class="lamp"></i><span class="row-icon" data-icon="imagery"></span>
+              <span class="row-name">Satellite imagery</span><span class="row-count num"></span>
+            </button>
+          </li>
+          <li>
+            <button
+              class="row"
+              type="button"
+              aria-pressed="false"
+              data-layer="fires"
+              data-status="needs-key"
+              aria-expanded="true"
+              aria-describedby="note-fires"
+            >
+              <i class="lamp"></i><span class="row-icon" data-icon="fires"></span>
+              <span class="row-name">Wildfires</span><span class="row-state">Needs a key</span>
+            </button>
+            <p class="row-note" id="note-fires">
+              Wildfires need a free NASA FIRMS key. Add it to the .env file.
+            </p>
+          </li>
+          <li>
+            <button class="row" type="button" aria-pressed="false" data-layer="webcams">
+              <i class="lamp"></i><span class="row-icon" data-icon="webcams"></span>
+              <span class="row-name">Webcams</span><span class="row-count num"></span>
+            </button>
+          </li>
+          <li>
+            <button class="row" type="button" aria-pressed="true" data-layer="nightlights">
+              <i class="lamp"></i><span class="row-icon" data-icon="nightlights"></span>
+              <span class="row-name">Day and night</span><span class="row-count num"></span>
+            </button>
+          </li>
+        </ul>
+        <div class="dock-offline" role="status">
+          <p>
+            <span class="warn">Live traffic is offline.</span> The gateway isn't reachable;
+            satellites and earthquakes still work.
+          </p>
+          <button class="btn" type="button">Try again</button>
+        </div>
+        <div class="dock-tools">
+          <button class="tool" type="button" aria-label="Face north">
+            <span data-icon="north"></span>
+          </button>
+          <button class="tool" type="button" aria-label="Zoom out">
+            <span data-icon="minus"></span>
+          </button>
+          <button class="tool" type="button" aria-label="Zoom in">
+            <span data-icon="plus"></span>
+          </button>
+          <span class="tool-gap"></span>
+          <button class="tool" type="button" aria-label="Turn sound on">
+            <span data-icon="sound-off"></span>
+          </button>
+          <button class="tool" type="button" aria-label="Keyboard shortcuts">
+            <span data-icon="keyboard"></span>
+          </button>
+          <button class="tool" type="button" aria-label="About and data sources">
+            <span data-icon="info"></span>
+          </button>
+        </div>
+      </nav>
+
+      <!-- Detail panel (a bottom sheet on phones) -->
+      <aside
+        class="detail glass"
+        style="--accent: var(--accent-aircraft)"
+        aria-label="Selected aircraft"
+      >
+        <button class="sheet-handle" type="button" aria-label="Expand details"><i></i></button>
+        <header class="detail-head">
+          <div>
+            <h1 class="detail-name">BAW115</h1>
+            <p class="detail-type">Boeing 777-300ER</p>
+            <p class="detail-sub">British Airways, G-STBK</p>
+          </div>
+          <a class="tool detail-close" href="#default" aria-label="Close details"
+            ><span data-icon="close"></span
+          ></a>
+        </header>
+
+        <dl class="readouts">
+          <div class="readout">
+            <dt>Altitude</dt>
+            <dd><span class="num">10,972</span><span class="unit">m</span></dd>
+          </div>
+          <div class="readout">
+            <dt>Ground speed</dt>
+            <dd><span class="num">452</span><span class="unit">kt</span></dd>
+          </div>
+          <div class="readout">
+            <dt>Heading</dt>
+            <dd><span class="num">251°</span></dd>
+          </div>
+          <div class="readout">
+            <dt>Climb rate</dt>
+            <dd><span class="num">0</span><span class="unit">m/s</span></dd>
+          </div>
+        </dl>
+
+        <figure class="spark">
+          <figcaption>
+            <span>Altitude since take-off</span
+            ><span class="spark-span"
+              ><span class="num">5</span><span class="unit">h</span> <span class="num">11</span
+              ><span class="unit">min</span></span
+            >
+          </figcaption>
+          <svg
+            viewBox="0 0 308 40"
+            preserveAspectRatio="none"
+            role="img"
+            aria-label="Climbed to 10,058 m, then stepped up to 10,363 m and 10,972 m"
+          >
+            <path class="spark-base" d="M2 37.5H306" />
+            <path class="spark-line" d="M2 37 8 29 15 14 22 8.7H92L98 7.8H190L197 6H304" />
+            <circle class="spark-dot" cx="304" cy="6" r="2" />
+          </svg>
+        </figure>
+
+        <div
+          class="route"
+          role="group"
+          aria-label="Route: London Heathrow to New York JFK, 72 percent flown"
+        >
+          <p class="route-ends"><span>London Heathrow</span><span>New York JFK</span></p>
+          <div class="route-track" style="--flown: 71.6%">
+            <i class="route-flown"></i>
+            <i class="route-here"></i>
+          </div>
+          <p class="route-times">
+            <span>Left <span class="num">14:31</span> <span class="unit">utc</span></span>
+            <span
+              >Lands in <span class="num">2</span> <span class="unit">h</span>
+              <span class="num">24</span> <span class="unit">min</span></span
+            >
+          </p>
+        </div>
+
+        <figure class="photo">
+          <svg
+            viewBox="0 0 308 124"
+            preserveAspectRatio="xMidYMid slice"
+            role="img"
+            aria-label="Photo placeholder: G-STBK on the ground"
+          >
+            <defs>
+              <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#141c26" />
+                <stop offset="0.62" stop-color="#3a4554" />
+                <stop offset="0.86" stop-color="#8d8279" />
+                <stop offset="1" stop-color="#b3997f" />
+              </linearGradient>
+              <filter id="soft" x="-5%" y="-5%" width="110%" height="110%">
+                <feGaussianBlur stdDeviation="0.5" />
+              </filter>
+            </defs>
+            <rect width="308" height="124" fill="url(#sky)" />
+            <rect y="101" width="308" height="23" fill="#1a2029" />
+            <rect y="100.5" width="308" height="1" fill="#d6c2a8" opacity="0.5" />
+            <g fill="#0c1118" filter="url(#soft)">
+              <path
+                d="M44 76c3-6 13-10 27-10h150l26-27h9l-9 29c9 1 15 3 15 5s-8 4-21 5l-170 6c-14 0-24-3-27-8Z"
+              />
+              <path d="M124 78l52 22h10l-24-24Z" />
+              <rect x="126" y="85" width="22" height="9" rx="4.5" />
+              <path d="M236 70l24 8h7l-16-10Z" />
+              <rect x="86" y="86" width="2.5" height="12" />
+              <rect x="150" y="90" width="2.5" height="8" />
+              <circle cx="87.25" cy="98.5" r="2.6" />
+              <circle cx="148" cy="98.5" r="2.8" />
+              <circle cx="154.5" cy="98.5" r="2.8" />
+            </g>
+          </svg>
+          <figcaption>
+            Photo by <a href="#selected">Anna Lindqvist</a> on
+            <a href="#selected">Planespotters.net</a>
+          </figcaption>
+        </figure>
+
+        <section class="nearby" aria-labelledby="nearby-h">
+          <h2 id="nearby-h">Nearby</h2>
+          <ul>
+            <li>
+              <a class="near" href="#selected" style="--accent: var(--accent-aircraft)">
+                <i class="lamp"></i><span class="near-name">AAL107</span
+                ><span class="near-sub">Boeing 777-300ER</span>
+                <span class="near-num"
+                  ><span class="num">46</span><span class="unit">km</span></span
+                >
+              </a>
+            </li>
+            <li>
+              <a class="near" href="#selected" style="--accent: var(--accent-ships)">
+                <i class="lamp"></i><span class="near-name">Atlantic Star</span
+                ><span class="near-sub">Container ship</span>
+                <span class="near-num"
+                  ><span class="num">84</span><span class="unit">km</span></span
+                >
+              </a>
+            </li>
+            <li>
+              <a class="near" href="#selected" style="--accent: var(--accent-aircraft)">
+                <i class="lamp"></i><span class="near-name">VIR137</span
+                ><span class="near-sub">Airbus A350-1000</span>
+                <span class="near-num"
+                  ><span class="num">118</span><span class="unit">km</span></span
+                >
+              </a>
+            </li>
+          </ul>
+        </section>
+
+        <div class="actions">
+          <button class="btn" type="button"><span data-icon="follow"></span>Follow</button>
+          <button class="btn" type="button"><span data-icon="copy-link"></span>Copy link</button>
+        </div>
+        <p class="source">
+          Position from ADS-B receivers, via <a href="#selected">adsb.lol</a>. Updated
+          <span class="num">2</span> <span class="unit">s</span> ago.
+        </p>
+      </aside>
+
+      <!-- Ticker: one line, on space -->
+      <a class="ticker" href="#default">
+        <svg class="ticker-mark" viewBox="0 0 12 12" width="12" height="12" aria-hidden="true">
+          <circle cx="6" cy="6" r="4.4" />
+        </svg>
+        <span>M5.2 earthquake off Crete, <span class="num">2</span> min ago</span>
+      </a>
+
+      <!-- Time tape -->
+      <div class="tape-wrap">
+        <div
+          class="tape glass"
+          id="tape"
+          role="slider"
+          tabindex="0"
+          aria-label="Time"
+          aria-valuemin="-60"
+          aria-valuemax="0"
+          aria-valuenow="0"
+          aria-valuetext="Live"
+        >
+          <svg class="tape-ticks" id="ticks" aria-hidden="true"></svg>
+          <i class="needle"></i>
+        </div>
+        <output class="needle-flag" id="flag" for="tape">live</output>
+        <a class="btn back-to-live glass" id="back" href="#default"
+          ><span data-icon="back-to-live"></span>Back to live</a
+        >
+      </div>
+
+      <p class="credit">
+        Map data from <a href="#default">OpenStreetMap</a> and <a href="#default">Natural Earth</a>
+      </p>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/d3-array@3.2.4/dist/d3-array.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3-geo@3.1.1/dist/d3-geo.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+    <script src="data/cities.js"></script>
+    <script src="icons.js"></script>
+    <script src="globe.js"></script>
+    <script src="mockup.js"></script>
+  </body>
+</html>

@@ -1,0 +1,53 @@
+{
+ "type": "FeatureCollection",
+ "metadata": {
+  "generated": 1794669562000,
+  "url": "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_week.geojson",
+  "title": "USGS Significant Earthquakes, Past Week",
+  "status": 200,
+  "api": "2.8.2",
+  "count": 1
+ },
+ "features": [
+  {
+   "type": "Feature",
+   "properties": {
+    "mag": 6.4,
+    "place": "30 km WSW of Lata, Solomon Islands",
+    "time": 1794195299466,
+    "updated": 1794606511187,
+    "tz": null,
+    "url": "https://earthquake.usgs.gov/earthquakes/eventpage/us7000tx16",
+    "detail": "https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/us7000tx16.geojson",
+    "felt": 2,
+    "cdi": 5.8,
+    "mmi": 6.361,
+    "alert": "green",
+    "status": "reviewed",
+    "tsunami": 0,
+    "sig": 631,
+    "net": "us",
+    "code": "7000tx16",
+    "ids": ",us7000tx16,",
+    "sources": ",us,",
+    "types": ",dyfi,ground-failure,losspager,moment-tensor,origin,phase-data,shakemap,",
+    "nst": 129,
+    "dmin": 5.706,
+    "rms": 0.87,
+    "gap": 29,
+    "magType": "mww",
+    "type": "earthquake",
+    "title": "M 6.4 - 30 km WSW of Lata, Solomon Islands"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     165.5616,
+     -10.8669,
+     17
+    ]
+   },
+   "id": "us7000tx16"
+  }
+ ]
+}

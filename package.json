@@ -1,0 +1,35 @@
+{
+  "name": "orya-halo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Orya Halo: a real-time 3D globe of live public data feeds.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "turbo run dev",
+    "dev:web": "turbo run dev --filter=@orya-halo/web",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck",
+    "check": "vp check",
+    "fmt": "vp fmt",
+    "lint": "vp lint",
+    "gateway": "cargo run --manifest-path apps/gateway/Cargo.toml --release"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "turbo": "^2.11.11",
+    "typescript": "catalog:",
+    "vite-plus": "catalog:"
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "12.18.0",
+      "onFail": "download"
+    }
+  },
+  "engines": {
+    "node": ">=22.18.0"
+  }
+}

@@ -1,0 +1,8 @@
+target
+.env
+.env.*
+!.env.example
+tests
+examples
+README.md
+fly.toml

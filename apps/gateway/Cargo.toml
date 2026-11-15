@@ -1,0 +1,70 @@
+[package]
+name = "orya-halo-gateway"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.89"
+description = "Orya Halo realtime gateway: connects to public aircraft and ship feeds once and fans out to browsers by viewport."
+license = "MIT"
+publish = false
+
+[lib]
+name = "orya_halo_gateway"
+path = "src/lib.rs"
+
+[[bin]]
+name = "orya-halo-gateway"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1"
+axum = { version = "0.8", default-features = false, features = [
+  "http1",
+  "json",
+  "query",
+  "tokio",
+  "ws",
+] }
+bytes = "1"
+dotenvy = "0.15"
+flate2 = "1"
+futures-util = { version = "0.3", default-features = false, features = ["sink", "std"] }
+h3o = "0.11"
+parking_lot = "0.13"
+# rustls with the ring provider only: no aws-lc, so no cmake or nasm in the build.
+reqwest = { version = "0.13", default-features = false, features = ["gzip", "rustls-no-provider"] }
+rustc-hash = "2"
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = [
+  "io-util",
+  "macros",
+  "net",
+  "rt-multi-thread",
+  "signal",
+  "sync",
+  "time",
+] }
+tower-http = { version = "0.7", features = ["cors"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+webpki-roots = "1"
+yawc = { version = "0.5", default-features = false, features = ["rustls-ring"] }
+
+[dev-dependencies]
+sysinfo = { version = "0.40", default-features = false, features = ["system"] }
+tokio-tungstenite = { version = "0.29", default-features = false, features = [
+  "connect",
+  "handshake",
+] }
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 4
+strip = true
+panic = "abort"
+
+[profile.dev]
+# Dependencies do the heavy lifting (TLS, deflate, H3); keep them fast in debug builds.
+opt-level = 1

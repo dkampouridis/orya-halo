@@ -1,0 +1,1573 @@
+/*
+ * The HUD's components. Ported from docs/mockup/mockup.css; measurements are recorded in
+ * docs/mockup/NOTES.md and the spec is docs/DESIGN.md. Order: reset, type roles, surfaces,
+ * components, states (intro, idle), touch, phones, reduced motion. The about and shortcuts
+ * overlays have their own sheet, overlays.css, loaded with them.
+ *
+ * Only `transform` and `opacity` are ever transitioned, plus colour on hover.
+ */
+
+/* ---------- reset, scoped to the HUD and its portals ---------- */
+
+.hud,
+.hud-portal {
+  font-family: var(--sans);
+  font-size: 13px;
+  line-height: 19px;
+  font-weight: 400;
+  font-stretch: 100%;
+  color: var(--ink);
+}
+:where(.hud, .hud-portal),
+:where(.hud, .hud-portal) :where(*, *::before, *::after) {
+  box-sizing: border-box;
+}
+:where(.hud, .hud-portal) :where(p, h1, h2, h3, ul, dl, dd, dt, figure) {
+  margin: 0;
+  padding: 0;
+  font-size: inherit;
+  font-weight: inherit;
+}
+:where(.hud, .hud-portal) :where(ul) {
+  list-style: none;
+}
+:where(.hud, .hud-portal) :where(button) {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-stretch: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+:where(.hud, .hud-portal) :where(a) {
+  color: inherit;
+  text-decoration: none;
+}
+:where(.hud, .hud-portal) :where(svg) {
+  display: block;
+}
+:where(.hud, .hud-portal) svg .f {
+  fill: currentColor;
+  stroke: none;
+}
+
+/* Keyboard focus: the halo's flat cousin. */
+:where(.hud, .hud-portal) :focus {
+  outline: none;
+}
+:where(.hud, .hud-portal) :focus-visible {
+  outline: 1px solid var(--halo);
+  outline-offset: 2px;
+}
+
+.hud {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  /*
+   * The tape's width. The map's credit line owns the bottom right corner: 40px clear of a
+   * 600px tape on wide screens, and at least 240px wide below 1192px, where the tape gives up
+   * width so the two never meet (2 x (16 margin + 240 credits + 16 gap) = 544).
+   */
+  --tape-w: min(600px, 100% - 544px);
+  /* Room the detail panel leaves at the bottom for that credit line: two lines here, four below. */
+  --credit-room: 56px;
+}
+@media (max-width: 1191px) {
+  .hud {
+    --credit-room: 88px;
+  }
+}
+.hud > * {
+  pointer-events: auto;
+}
+
+/* ---------- type roles ---------- */
+
+/* Data: every numeral that changes. */
+.num {
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 300;
+  font-stretch: 80%;
+  letter-spacing: 0;
+  color: var(--ink);
+}
+/* Micro: units sit after the number, lowercase and dim. */
+.unit {
+  margin-left: 3px;
+  font-family: var(--sans);
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 500;
+  font-stretch: 82%;
+  color: var(--ink-dim);
+}
+.warn {
+  color: var(--warn);
+}
+.key {
+  display: inline-block;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  font-family: var(--sans);
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 500;
+  font-stretch: 82%;
+  text-align: center;
+  color: var(--ink-dim);
+}
+.link {
+  text-decoration: underline;
+  text-decoration-color: var(--ink-faint);
+  text-underline-offset: 2px;
+  border-radius: 2px;
+}
+.link:hover {
+  color: var(--ink);
+}
+
+/* ---------- surfaces ---------- */
+
+.glass {
+  background-color: var(--glass);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  backdrop-filter: blur(20px) saturate(140%);
+  border: 1px solid var(--line);
+  border-top-color: var(--line-strong);
+  border-radius: 10px;
+  transition: opacity 150ms; /* idle return; components with their own motion override this */
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass {
+    background-color: var(--glass-solid);
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .glass {
+    background-color: var(--glass-solid);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* The lamp: a 3px bar in the layer's colour. Lit, hollow, broken or coming on. */
+.lamp {
+  display: block;
+  width: 3px;
+  height: 14px;
+  border-radius: 1px;
+  background: var(--accent);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--accent) 50%, transparent);
+}
+.lamp[data-lamp="hollow"] {
+  background: none;
+  box-shadow: inset 0 0 0 1px var(--ink-faint);
+}
+/* Degraded: the lamp breaks into segments. Shape carries the state; --warn is for the words. */
+.lamp[data-lamp="broken"] {
+  background: repeating-linear-gradient(to bottom, var(--accent) 0 3px, transparent 3px 5.5px);
+  box-shadow: none;
+}
+/* First data not in yet: the colour is there, the light is not. */
+.lamp[data-lamp="pending"] {
+  opacity: 0.45;
+  box-shadow: none;
+}
+.lamp-small {
+  height: 10px;
+  box-shadow: none;
+}
+
+/*
+ * The halo as a loading indicator: 14px, one turn in 900ms. Not called "ring": that name
+ * is a Tailwind utility (a box-shadow outline), and Tailwind emits it for any file that
+ * contains the word.
+ */
+.halo-ring {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  color: var(--halo);
+  animation: ring-turn 900ms linear infinite;
+}
+@keyframes ring-turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  font-stretch: 82%;
+  color: var(--ink);
+  white-space: nowrap;
+  transition:
+    border-color 120ms,
+    background-color 120ms;
+}
+/* Pressed is a lit edge and a lit glyph, never a filled background. */
+.btn[aria-pressed="true"] {
+  border-color: color-mix(in srgb, var(--halo) 55%, transparent);
+}
+.btn[aria-pressed="true"] svg {
+  color: var(--halo);
+}
+.tool {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 32px;
+  border-radius: 6px;
+  color: var(--ink-dim);
+  transition:
+    color 120ms,
+    background-color 120ms;
+}
+.tool[aria-pressed="true"] {
+  color: var(--ink);
+}
+@media (hover: hover) {
+  .btn:hover {
+    border-color: var(--line-strong);
+    background-color: var(--wash);
+  }
+  .tool:hover {
+    color: var(--ink);
+    background-color: var(--wash);
+  }
+}
+
+/* A small glass label: the hover tag, tooltips, the phone dock's long-press name. */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 24px;
+  padding: 0 8px;
+  background-color: var(--glass);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  backdrop-filter: blur(20px) saturate(140%);
+  border: 1px solid var(--line);
+  border-top-color: var(--line-strong);
+  border-radius: 6px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+@media (prefers-reduced-transparency: reduce) {
+  .tag {
+    background-color: var(--glass-solid);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+.tag-name {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  font-stretch: 82%;
+}
+.tag .unit {
+  margin-left: -5px;
+}
+.hover-tag {
+  position: absolute;
+  top: 0;
+  left: 0;
+  margin: -12px 0 0 15px;
+  transition: opacity 150ms;
+  will-change: transform;
+}
+.hover-tag[data-side="left"] {
+  margin-left: -15px;
+}
+.tip {
+  transition: opacity 120ms;
+}
+/* A sentence cut short where it sits (a dock note), shown whole. */
+.tip-long {
+  align-items: flex-start;
+  height: auto;
+  max-width: 264px;
+  padding: 5px 8px 6px;
+  white-space: normal;
+}
+.tip[data-starting-style],
+.tip[data-ending-style] {
+  opacity: 0;
+}
+
+/* ---------- on space: wordmark, clock, ticker ---------- */
+
+.brand,
+.status,
+.status-count,
+.ticker {
+  transition: opacity 150ms;
+}
+.brand {
+  position: absolute;
+  top: var(--margin);
+  left: var(--margin);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 40px;
+  border-radius: 6px;
+  text-shadow: var(--on-space);
+}
+.brand-name {
+  font-size: 22px;
+  line-height: 26px;
+  font-weight: 300;
+  font-stretch: 118%;
+  letter-spacing: 0.04em;
+  /* Optical: the expanded light face sits a touch low against the ring. */
+  transform: translateY(-1px);
+}
+
+.status {
+  position: absolute;
+  top: var(--margin);
+  right: var(--margin);
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  height: 40px;
+  text-shadow: var(--on-space);
+}
+.status-item {
+  display: flex;
+  align-items: baseline;
+}
+
+.ticker {
+  position: absolute;
+  left: var(--margin);
+  bottom: var(--margin);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 48px;
+  max-width: calc(50% - var(--tape-w) / 2 - 2 * var(--margin));
+  border-radius: 6px;
+  white-space: nowrap;
+  text-align: left;
+  text-shadow: var(--on-space);
+}
+.ticker-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  animation: ticker-in 400ms var(--ease);
+}
+/* One line replaces the last: the new one fades up from nothing, nothing slides. */
+@keyframes ticker-in {
+  from {
+    opacity: 0;
+  }
+}
+.ticker-mark {
+  flex: none;
+  color: var(--accent, var(--halo));
+}
+
+/* ---------- search ---------- */
+
+.search {
+  position: absolute;
+  top: var(--margin);
+  left: 50%;
+  width: 420px;
+  margin-left: -210px;
+}
+.search-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 40px;
+  padding: 0 11px 0 14px;
+  border-radius: 999px;
+  cursor: text;
+}
+.search-field:focus-within {
+  outline: 1px solid var(--halo);
+  outline-offset: 2px;
+}
+.search-icon {
+  flex: none;
+  color: var(--ink-dim);
+}
+.search-open {
+  display: none;
+}
+.search input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-stretch: inherit;
+  caret-color: var(--halo);
+}
+.search input:focus-visible {
+  outline: none;
+}
+.search input::placeholder {
+  color: var(--ink-dim);
+  opacity: 1;
+}
+
+.results {
+  margin-top: 8px;
+  padding: 6px;
+  transition:
+    opacity 200ms var(--ease),
+    transform 200ms var(--ease);
+}
+@starting-style {
+  .results {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+}
+.results[data-closing] {
+  opacity: 0;
+  transform: translateY(-12px);
+  transition:
+    opacity 150ms ease-in,
+    transform 150ms ease-in;
+}
+.group-name {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 28px;
+  padding: 4px 10px 0;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  font-stretch: 82%;
+  color: var(--ink-dim);
+}
+.result {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  height: 32px;
+  padding: 6px 10px 0 25px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+/* Keyboard position in the list: the same halo outline, drawn inside the row. */
+.result[aria-selected="true"] {
+  background-color: var(--wash);
+  outline: 1px solid var(--halo);
+  outline-offset: -1px;
+}
+.result-name {
+  flex: none;
+  max-width: 62%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 500;
+}
+.result-sub {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  font-stretch: 82%;
+  color: var(--ink-dim);
+}
+.results-note {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 32px;
+  padding: 6px 10px;
+  color: var(--ink-dim);
+}
+.results-hint {
+  display: flex;
+  gap: 16px;
+  margin-top: 6px;
+  padding: 9px 10px 4px;
+  border-top: 1px solid var(--line);
+  font-size: 11px;
+  line-height: 18px;
+  font-weight: 500;
+  font-stretch: 82%;
+  color: var(--ink-dim);
+}
+.results-hint .key + .key {
+  margin-left: 3px;
+}
+.results-hint .key {
+  margin-right: 3px;
+}
+
+/* ---------- layer dock ---------- */
+
+.dock {
+  position: absolute;
+  top: var(--top);
+  left: var(--margin);
+  width: 208px;
+  padding: 6px 0;
+}
+.row {
+  display: grid;
+  grid-template-columns: 3px 1fr auto;
+  align-items: center;
+  column-gap: 12px;
+  width: calc(100% - 12px);
+  height: 32px;
+  margin: 0 6px;
+  padding: 0 10px;
+  border-radius: 6px;
+  text-align: left;
+  transition: background-color 120ms;
+}
+.row-icon {
+  display: none;
+}
+.row-name {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  font-stretch: 82%;
+  white-space: nowrap;
+}
+.row[data-dim] .row-name,
+.row[data-dim] .row-icon {
+  color: var(--ink-dim);
+}
+.row-count {
+  text-align: right;
+}
+.row-state {
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 500;
+  font-stretch: 82%;
+  color: var(--ink-dim);
+}
+.row-state.warn {
+  color: var(--warn);
+}
+/*
+ * At most two lines, so a long sentence from a source cannot stretch the dock. The margin is
+ * outside the clamped box: as padding, a third line would show through it.
+ */
+.row-note {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  margin: 0 16px 8px 31px;
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 500;
+  font-stretch: 82%;
+  color: var(--ink-dim);
+}
+.row-note.warn {
+  color: var(--warn);
+}
+.dock-peek {
+  display: none;
+}
+
+/* Notes about the app rather than one layer: live traffic offline, the base map or graphics gone. */
+.note-block {
+  margin-top: 6px;
+  padding: 12px 16px 10px;
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  font-stretch: 82%;
+  color: var(--ink-dim);
+}
+.note-block .btn {
+  margin-top: 10px;
+}
+/* For whoever runs the app; development builds only. */
+.note-hint {
+  margin-top: 6px;
+  font-size: 11px;
+  line-height: 14px;
+  overflow-wrap: anywhere;
+}
+.note-block p + .note-hint {
+  padding-top: 6px;
+  border-top: 1px dashed var(--line);
+}
+.note-hint code {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 300;
+  font-stretch: 80%;
+  color: var(--ink);
+}
+.phone-notes {
+  display: none;
+}
+
+/* The globe could not start: the reason and the one way out, alone on space. */
+.start-error {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: min(36ch, calc(100% - 4 * var(--margin)));
+  translate: -50% -50%;
+  text-align: center;
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 500;
+  text-shadow: var(--on-space);
+}
+.start-error .btn {
+  background-color: var(--glass-solid);
+  text-shadow: none;
+}
+.dock-tools {
+  display: flex;
+  margin-top: 6px;
+  padding: 6px 6px 0;
+  border-top: 1px solid var(--line);
+}
+.tool-gap {
+  flex: 1;
+}
+
+/* ---------- detail panel ---------- */
+
+.detail {
+  position: absolute;
+  top: var(--top);
+  right: var(--margin);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 340px;
+  /* Keeps the map's own credit line clear beneath the panel. */
+  max-height: calc(100% - var(--top) - var(--credit-room));
+  padding: 16px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  /* The accent rule: 2px of the layer's colour between the corner radii. */
+  border-top-color: transparent;
+  background-image: linear-gradient(var(--accent), var(--accent));
+  background-origin: border-box;
+  background-position: 10px 0;
+  background-size: calc(100% - 20px) 2px;
+  background-repeat: no-repeat;
+  transition:
+    opacity 200ms var(--ease),
+    transform 200ms var(--ease);
+}
+@starting-style {
+  .detail {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+}
+.detail[data-closing] {
+  opacity: 0;
+  transform: translateX(12px);
+  transition:
+    opacity 150ms ease-in,
+    transform 150ms ease-in;
+  pointer-events: none;
+}
+.detail::-webkit-scrollbar {
+  display: none;
+}
+.sheet-handle {
+  display: none;
+}
+.detail-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+.detail-titles {
+  min-width: 0;
+}
+.detail-name {
+  font-size: 22px;
+  line-height: 26px;
+  font-weight: 300;
+  font-stretch: 118%;
+  overflow-wrap: anywhere;
+}
+.detail-type {
+  margin-top: 2px;
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 500;
+}
+.detail-sub,
+.readout dt,
+.facts dt,
+.nearby h2,
+.near-sub,
+.route-label {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  font-stretch: 82%;
+  color: var(--ink-dim);
+}
+.detail-close {
+  flex: none;
+  margin: -4px -6px 0 0;
+}
+.detail-wait {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 26px;
+  color: var(--ink-dim);
+}
+.detail-gone {
+  max-width: 34ch;
+}
+.detail-gone p + p {
+  margin-top: 4px;
+  color: var(--ink-dim);
+}
+
+.readouts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 16px;
+}
+.readout dd {
+  display: flex;
+  align-items: baseline;
+}
+.readout .num {
+  font-size: 20px;
+  line-height: 24px;
+  font-weight: 200;
+}
+.readout .unit {
+  margin-left: 4px;
+}
+
+/* The selection's recent altitude or speed: one accent hairline, no fill, no axes. */
+.spark figcaption {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  font-stretch: 82%;
+  color: var(--ink-dim);
+}
+.spark figcaption > span:first-child .num {
+  font-size: 11px;
+  color: inherit;
+}
+.spark-range {
+  flex: none;
+  white-space: nowrap;
+}
+.spark-to {
+  margin: 0 3px;
+}
+.spark svg {
+  width: 100%;
+  height: 40px;
+  margin-top: 6px;
+  overflow: visible;
+}
+.spark-line,
+.spark-dot {
+  fill: none;
+  stroke: var(--accent);
+  vector-effect: non-scaling-stroke;
+}
+.spark-line {
+  stroke-width: 1.25;
+  stroke-linejoin: round;
+}
+.spark-dot {
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+
+.route-ends {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 500;
+}
+.route-ends span:last-child {
+  text-align: right;
+}
+/* Origin to destination as a track with the aircraft on it, in place of an arrow. */
+.route-track {
+  position: relative;
+  height: 12px;
+  margin: 5px 0 0;
+  background:
+    linear-gradient(var(--ink-dim), var(--ink-dim)) left center / 1px 7px no-repeat,
+    linear-gradient(var(--ink-dim), var(--ink-dim)) right center / 1px 7px no-repeat;
+}
+.route-track::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: calc(var(--flown) + 7px);
+  right: 0;
+  height: 1px;
+  margin-top: -0.5px;
+  background: var(--line-strong);
+}
+.route-flown {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: calc(var(--flown) - 7px);
+  height: 1px;
+  margin-top: -0.5px;
+  background: var(--ink);
+}
+/* Where the aircraft is: the halo again, at 9px. */
+.route-here {
+  position: absolute;
+  top: 1.5px;
+  left: var(--flown);
+  width: 9px;
+  height: 9px;
+  margin-left: -4.5px;
+  border: 1.25px solid var(--halo);
+  border-radius: 50%;
+}
+/* Position unknown along the route: one plain line between the ends. */
+.route-track[data-plain]::after {
+  left: 0;
+}
+
+.media a {
+  display: block;
+  width: fit-content;
+  max-width: 100%;
+  border-radius: 6px;
+}
+/* Never larger than the file itself: a small thumbnail stays small rather than blurring. */
+.media img,
+.media video {
+  display: block;
+  max-width: 100%;
+  width: auto;
+  height: auto;
+  max-height: 220px;
+  border-radius: 6px;
+  background: rgb(170 205 255 / 0.05);
+}
+.media figcaption,
+.source {
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 500;
+  font-stretch: 82%;
+  color: var(--ink-dim);
+}
+.media figcaption {
+  margin-top: 6px;
+}
+.source .num,
+.media figcaption .num {
+  font-size: 11px;
+  color: var(--ink-dim);
+}
+.source .unit {
+  margin-left: 0;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 16px;
+}
+.facts dd {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  text-align: right;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  font-stretch: 82%;
+}
+.facts dd .unit {
+  margin-left: 3px;
+}
+
+.nearby h2 {
+  margin-bottom: 2px;
+}
+.near {
+  display: grid;
+  grid-template-columns: 3px auto 1fr auto;
+  align-items: center;
+  column-gap: 12px;
+  width: calc(100% + 20px);
+  height: 32px;
+  margin: 0 -10px;
+  padding: 0 10px;
+  border-radius: 6px;
+  text-align: left;
+}
+.near-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  font-stretch: 82%;
+}
+.near-sub {
+  margin-left: -4px;
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+/* ---------- time tape ---------- */
+
+.tape-wrap {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: var(--margin);
+  width: var(--tape-w);
+  margin: 0 auto;
+  transition: opacity 150ms;
+  --needle: 78%;
+}
+.tape {
+  position: relative;
+  height: 48px;
+  overflow: hidden;
+  cursor: ew-resize;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.tape[aria-disabled="true"] {
+  cursor: default;
+}
+.tape-ticks,
+.tape-labels {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent,
+    #000 48px,
+    #000 calc(100% - 10px),
+    transparent
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    #000 48px,
+    #000 calc(100% - 10px),
+    transparent
+  );
+  pointer-events: none;
+}
+.tape-labels {
+  overflow: hidden;
+}
+/* A small fixed pool of labels, moved with transforms as the tape slides. */
+.tape-labels span {
+  position: absolute;
+  left: -24px;
+  bottom: 25px;
+  width: 48px;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 12px;
+  font-weight: 300;
+  font-stretch: 80%;
+  color: var(--ink-dim);
+  will-change: transform;
+}
+.tape-labels span[data-far] {
+  color: var(--ink-faint);
+  opacity: 0.7;
+}
+.needle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--needle);
+  width: 1px;
+  background: var(--halo);
+}
+/* The needle's readout window: ticks and labels slide underneath it. */
+.needle-flag {
+  position: absolute;
+  top: 8px;
+  left: calc(var(--needle) + 2px);
+  display: block;
+  height: 18px;
+  padding: 0 7px 0 6px;
+  border: 1px solid var(--line-strong);
+  border-left: 0;
+  border-radius: 0 4px 4px 0;
+  background: var(--glass-solid);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  font-stretch: 82%;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.needle-flag .num {
+  font-size: 11px;
+}
+/* No history yet: the tape says why it will not move. */
+.tape-empty {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 16px;
+  display: flex;
+  align-items: flex-start;
+  padding-top: 9px;
+  max-width: calc(var(--needle) - 32px);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  font-stretch: 82%;
+  color: var(--ink-dim);
+  pointer-events: none;
+}
+/*
+ * Above the tape's right end, rising out of it. Beside the tape it would sit on the map's
+ * credit line, which starts 40px from the tape on wide screens.
+ */
+.back-to-live {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 8px);
+  transition:
+    opacity 200ms var(--ease),
+    transform 200ms var(--ease);
+}
+.back-to-live.glass {
+  border-radius: 6px;
+}
+@starting-style {
+  .back-to-live {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+.back-to-live[data-closing] {
+  opacity: 0;
+  transform: translateY(12px);
+  transition:
+    opacity 150ms ease-in,
+    transform 150ms ease-in;
+}
+
+/* ---------- opening shot ---------- */
+
+/*
+ * The one orchestrated entrance. The wordmark comes up with the stars; once the globe is
+ * turning the clock appears and the glass comes in from its own edges, a beat apart.
+ * Skipping the intro (any input, a shared link, reduced motion) lands on the plain state.
+ */
+@starting-style {
+  .brand {
+    opacity: 0;
+  }
+}
+.hud[data-intro="stars"] .brand {
+  transition: opacity 900ms linear;
+}
+.hud[data-intro="stars"] .enter {
+  opacity: 0;
+  transform: var(--from, none);
+  pointer-events: none;
+}
+.hud[data-intro="globe"] .enter {
+  transition:
+    opacity 600ms var(--ease) var(--delay, 0ms),
+    transform 600ms var(--ease) var(--delay, 0ms);
+}
+.status.enter {
+  --delay: 200ms;
+}
+.search.enter {
+  --from: translateY(-12px);
+  --delay: 900ms;
+}
+.dock.enter {
+  --from: translateX(-12px);
+  --delay: 1000ms;
+}
+.tape-wrap.enter {
+  --from: translateY(12px);
+  --delay: 1100ms;
+}
+.ticker.enter {
+  --delay: 1400ms;
+}
+
+/* ---------- idle ---------- */
+
+/* After 8 s the glass fades away over 600ms; any input brings it back in 150ms. */
+.hud[data-idle] .glass,
+.hud[data-idle] .tape-wrap,
+.hud[data-idle] .ticker,
+.hud[data-idle] .status-count,
+.hud[data-idle] .status-fps,
+.hud[data-idle] .tag {
+  opacity: 0;
+  transition: opacity 600ms linear;
+  pointer-events: none;
+}
+.hud[data-idle] .brand,
+.hud[data-idle] .status {
+  opacity: 0.55;
+  transition: opacity 600ms linear;
+}
+
+/* ---------- hover ---------- */
+
+@media (hover: hover) {
+  .row:hover,
+  .near:hover,
+  .result:hover {
+    background-color: var(--wash);
+  }
+  .search-field:hover {
+    border-color: var(--line-strong);
+  }
+}
+
+/* ---------- touch ---------- */
+
+@media (pointer: coarse) {
+  .row,
+  .near,
+  .result {
+    height: 40px;
+  }
+  .result {
+    padding-top: 10px;
+  }
+  .btn,
+  .tool {
+    height: 40px;
+  }
+  .tool {
+    width: 40px;
+  }
+}
+
+/* ---------- narrow screens, wider than a phone ---------- */
+
+/*
+ * Centred, the tape would shrink below 360px here. It moves to the left edge instead, as wide
+ * as the credit corner allows, and the ticker rides above it.
+ */
+@media (min-width: 721px) and (max-width: 903px) {
+  /* Centred, the 420px pill would run into the clock: it starts after the wordmark instead. */
+  .search {
+    left: 188px;
+    width: min(420px, 100% - 188px - 290px);
+    margin-left: 0;
+  }
+  .tape-wrap {
+    right: auto;
+    left: var(--margin);
+    width: calc(100% - 288px);
+    margin: 0;
+  }
+  .ticker {
+    bottom: calc(var(--margin) + 48px + 8px);
+    height: 32px;
+    max-width: calc(100% - 288px - 128px);
+  }
+}
+
+/* ---------- phones ---------- */
+
+@media (max-width: 720px) {
+  .hover-tag,
+  .dock-tools,
+  .row-name,
+  .row-count,
+  .row-state,
+  .row-note,
+  .row .halo-ring,
+  .results-hint,
+  .search-key {
+    display: none;
+  }
+
+  .status {
+    top: 50px;
+    right: auto;
+    left: var(--margin);
+    gap: 16px;
+    height: 16px;
+  }
+
+  /* Search collapses to its icon and opens to the full width. */
+  .search {
+    left: auto;
+    right: var(--margin);
+    width: 40px;
+    margin-left: 0;
+  }
+  .search-field {
+    display: none;
+  }
+  .search-open {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    color: var(--ink-dim);
+  }
+  .hud[data-search] .search {
+    width: calc(100vw - 2 * var(--margin));
+  }
+  .hud[data-search] .search-open {
+    display: none;
+  }
+  .hud[data-search] .search-field {
+    display: flex;
+    padding: 0 14px;
+  }
+  @starting-style {
+    .hud[data-search] .search-field {
+      opacity: 0;
+    }
+  }
+  .search input {
+    font-size: 16px; /* stops iOS zooming the page on focus */
+  }
+  .hud[data-search] .brand,
+  .hud[data-search] .status,
+  .hud[data-search] .ticker,
+  .hud[data-search] .phone-notes {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .result {
+    height: 44px;
+    padding-top: 12px;
+  }
+
+  /* The dock becomes a strip of lamp buttons above the tape. */
+  .dock {
+    top: auto;
+    left: var(--margin);
+    right: var(--margin);
+    bottom: calc(var(--bottom) + 44px + 8px);
+    display: flex;
+    flex-direction: column-reverse;
+    width: auto;
+    padding: 3px;
+    transition:
+      transform 200ms var(--ease),
+      opacity 150ms;
+  }
+  .dock-rows {
+    display: flex;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .dock-rows::-webkit-scrollbar {
+    display: none;
+  }
+  /* All ten lamps stay in view: buttons share the width, and scroll only below 34px each. */
+  .dock-rows li {
+    position: relative;
+    flex: 1 0 34px;
+  }
+  .row {
+    grid-template-columns: 3px 16px;
+    justify-content: center;
+    column-gap: 6px;
+    width: 100%;
+    height: 40px;
+    margin: 0;
+    padding: 0;
+    touch-action: manipulation;
+    -webkit-touch-callout: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .row-icon {
+    display: block;
+  }
+  /* Long-press on a lamp button: its name and count, above the strip. */
+  .dock-peek {
+    position: absolute;
+    left: 3px;
+    bottom: calc(100% + 8px);
+    display: inline-flex;
+  }
+  /*
+   * Notes and the ticker sit under the clock. Above the dock they would meet the map's credit
+   * line, which the engine keeps just above the dock strip.
+   */
+  .phone-notes {
+    position: absolute;
+    top: 74px;
+    left: var(--margin);
+    right: var(--margin);
+    display: block;
+    padding: 0;
+  }
+  .phone-notes:empty {
+    display: none;
+  }
+  .phone-notes .note-block {
+    margin: 0;
+    padding: 9px 12px 10px;
+    border-top: 0;
+  }
+  .phone-notes .note-block + .note-block {
+    border-top: 1px solid var(--line);
+  }
+  .phone-notes .btn {
+    height: 40px;
+  }
+
+  .ticker {
+    top: 70px;
+    right: var(--margin);
+    bottom: auto;
+    height: 32px;
+    max-width: none;
+  }
+
+  .tape-wrap {
+    left: var(--margin);
+    right: var(--margin);
+    bottom: var(--bottom);
+    width: auto;
+    margin: 0;
+    --needle: 62%;
+    transition:
+      transform 200ms var(--ease),
+      opacity 150ms;
+  }
+  .tape {
+    height: 44px;
+  }
+  .needle-flag {
+    top: 6px;
+  }
+  /* The explanation needs two lines here, so the ruling makes way for it. */
+  .tape[aria-disabled="true"] .tape-ticks {
+    display: none;
+  }
+  .tape-empty {
+    align-items: center;
+    padding-top: 0;
+    left: 14px;
+  }
+  /* No room beside the tape: the button rides inside its right end, icon only. */
+  .back-to-live {
+    right: 6px;
+    bottom: 6px;
+    width: 40px;
+    height: 32px;
+    padding: 0;
+    gap: 0;
+    background-color: var(--glass-solid);
+  }
+  .back-to-live span {
+    display: none;
+  }
+  @starting-style {
+    .back-to-live {
+      transform: none;
+    }
+  }
+  .back-to-live[data-closing] {
+    transform: none;
+  }
+
+  /* The detail panel becomes a bottom sheet with two stops, dragged by its head. */
+  .detail {
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: auto;
+    height: 70dvh;
+    max-height: none;
+    gap: 14px;
+    padding: 0 16px 16px;
+    border-right: 0;
+    border-bottom: 0;
+    border-left: 0;
+    border-radius: 10px 10px 0 0;
+    overflow: hidden;
+    transform: translateY(var(--sheet-y, calc(100% - var(--peek))));
+    transition:
+      opacity 150ms,
+      transform 200ms var(--ease);
+  }
+  .detail[data-stop="full"] {
+    --sheet-y: 0px;
+    overflow-y: auto;
+  }
+  .detail[data-dragging] {
+    transition: none;
+  }
+  @starting-style {
+    .detail {
+      opacity: 1;
+      transform: translateY(100%);
+    }
+  }
+  .detail[data-closing] {
+    opacity: 1;
+    transform: translateY(100%);
+    transition: transform 150ms ease-in;
+  }
+  .sheet-handle {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 100%;
+    height: 22px;
+    margin-bottom: -14px;
+    cursor: grab;
+    touch-action: none;
+  }
+  .sheet-handle i {
+    width: 32px;
+    height: 3px;
+    border-radius: 1.5px;
+    background: var(--ink-faint);
+  }
+  .detail-head {
+    touch-action: none;
+  }
+  .detail-close {
+    width: 40px;
+    height: 40px;
+    margin: -8px -10px 0 0;
+  }
+  /* Peek: the name and the two primary readouts. */
+  .detail[data-stop="peek"] .detail-sub,
+  .detail[data-stop="peek"] .readout:nth-child(n + 3) {
+    display: none;
+  }
+  .detail[data-stop="peek"] .detail-head {
+    margin-bottom: -6px;
+  }
+
+  /* At the peek stop the dock and tape ride above the sheet; at the full stop they give way. */
+  .hud[data-sheet="peek"] .dock,
+  .hud[data-sheet="peek"] .tape-wrap {
+    transform: translateY(calc(var(--bottom) - var(--peek) - 8px));
+  }
+  .hud[data-offline] .ticker,
+  .hud[data-notice] .ticker,
+  .hud[data-sheet="full"] .dock,
+  .hud[data-sheet="full"] .tape-wrap {
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
+/* ---------- reduced motion ---------- */
+
+/*
+ * Set by the app as well as the media query: the store's `reducedMotion` flag puts
+ * data-reduced on the HUD and its portals. Fades stay, slides go, the ring turns at half rate.
+ * Only the entrance's offset is cancelled on `.enter`: the same elements are lifted with a
+ * transform above the phone sheet, and that is placement, not motion.
+ */
+.hud[data-reduced][data-intro="stars"] .enter,
+.hud[data-reduced] .results,
+.hud[data-reduced] .back-to-live,
+.hud-portal[data-reduced] {
+  transform: none !important;
+}
+.hud[data-reduced] .halo-ring,
+.hud-portal[data-reduced] .halo-ring {
+  animation-duration: 1800ms;
+}
+.hud[data-reduced] .ticker-text {
+  animation: none;
+}
+@media (min-width: 721px) {
+  .hud[data-reduced] .detail {
+    transform: none !important;
+  }
+}
+@media (max-width: 720px) {
+  .hud[data-reduced] .detail,
+  .hud[data-reduced] .dock,
+  .hud[data-reduced] .tape-wrap {
+    transition-duration: 0ms;
+  }
+}

@@ -1,0 +1,54 @@
+name: Bug
+description: Something is broken, wrong or slower than it should be.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. For a security problem, do not use this form: see SECURITY.md.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you saw, and what you expected to see instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: How to make it happen
+      description: Steps from opening the app. A copied link helps, since it carries the view, the layers and the selection.
+      placeholder: |
+        1. Open https://...#v=...
+        2. Turn on Ships
+        3. Select ...
+    validations:
+      required: true
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where
+      options:
+        - The web app
+        - The gateway
+        - Both, or not sure
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser, device and operating system
+      placeholder: Edge 142 on Windows 11, Safari on iPhone 15, ...
+  - type: textarea
+    id: setup
+    attributes:
+      label: Setup
+      description: |
+        Running locally or a public deployment? Gateway live, in mock mode, or none?
+        Which keys are set (names only, never the values)?
+  - type: textarea
+    id: logs
+    attributes:
+      label: Console output, gateway log or screenshots
+      description: Remove any key or address you would not want public before pasting.
+      render: text

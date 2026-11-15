@@ -1,0 +1,236 @@
+{
+ "type": "FeatureCollection",
+ "dataUpdatedTime": "2026-11-14T15:36:47Z",
+ "features": [
+  {
+   "mmsi": 230941940,
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     24.962397,
+     60.171792
+    ]
+   },
+   "properties": {
+    "mmsi": 230941940,
+    "sog": 0.1,
+    "cog": 156.7,
+    "navStat": 5,
+    "rot": -7,
+    "posAcc": true,
+    "raim": false,
+    "heading": 194,
+    "timestamp": 59,
+    "timestampExternal": 1794670259573
+   }
+  },
+  {
+   "mmsi": 230661000,
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     24.972265,
+     60.16988
+    ]
+   },
+   "properties": {
+    "mmsi": 230661000,
+    "sog": 0,
+    "cog": 98.6,
+    "navStat": 5,
+    "rot": 0,
+    "posAcc": true,
+    "raim": true,
+    "heading": 242,
+    "timestamp": 28,
+    "timestampExternal": 1794670288799
+   }
+  },
+  {
+   "mmsi": 230108590,
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     24.980412,
+     60.167407
+    ]
+   },
+   "properties": {
+    "mmsi": 230108590,
+    "sog": 0,
+    "cog": 0.1,
+    "navStat": 5,
+    "rot": 0,
+    "posAcc": true,
+    "raim": false,
+    "heading": 55,
+    "timestamp": 48,
+    "timestampExternal": 1794670430507
+   }
+  },
+  {
+   "mmsi": 230987940,
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     24.888592,
+     60.155757
+    ]
+   },
+   "properties": {
+    "mmsi": 230987940,
+    "sog": 0,
+    "cog": 214.9,
+    "navStat": 5,
+    "rot": 0,
+    "posAcc": false,
+    "raim": false,
+    "heading": 101,
+    "timestamp": 0,
+    "timestampExternal": 1794670440319
+   }
+  },
+  {
+   "mmsi": 230291000,
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     24.971248,
+     60.169013
+    ]
+   },
+   "properties": {
+    "mmsi": 230291000,
+    "sog": 0,
+    "cog": 242.1,
+    "navStat": 5,
+    "rot": -128,
+    "posAcc": true,
+    "raim": false,
+    "heading": 511,
+    "timestamp": 3,
+    "timestampExternal": 1794670443858
+   }
+  },
+  {
+   "mmsi": 230953000,
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     24.970723,
+     60.168853
+    ]
+   },
+   "properties": {
+    "mmsi": 230953000,
+    "sog": 0,
+    "cog": 325.6,
+    "navStat": 5,
+    "rot": 0,
+    "posAcc": true,
+    "raim": false,
+    "heading": 61,
+    "timestamp": 2,
+    "timestampExternal": 1794670444490
+   }
+  },
+  {
+   "mmsi": 230941190,
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     24.929092,
+     60.159085
+    ]
+   },
+   "properties": {
+    "mmsi": 230941190,
+    "sog": 0,
+    "cog": 191.6,
+    "navStat": 5,
+    "rot": 0,
+    "posAcc": true,
+    "raim": false,
+    "heading": 139,
+    "timestamp": 6,
+    "timestampExternal": 1794670446123
+   }
+  },
+  {
+   "mmsi": 230252000,
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     24.97458,
+     60.17001
+    ]
+   },
+   "properties": {
+    "mmsi": 230252000,
+    "sog": 0.1,
+    "cog": 0,
+    "navStat": 5,
+    "rot": -128,
+    "posAcc": true,
+    "raim": true,
+    "heading": 511,
+    "timestamp": 12,
+    "timestampExternal": 1794670452741
+   }
+  },
+  {
+   "mmsi": 230108270,
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     24.961382,
+     60.170883
+    ]
+   },
+   "properties": {
+    "mmsi": 230108270,
+    "sog": 0,
+    "cog": 139,
+    "navStat": 5,
+    "rot": -128,
+    "posAcc": false,
+    "raim": false,
+    "heading": 511,
+    "timestamp": 22,
+    "timestampExternal": 1794670462184
+   }
+  },
+  {
+   "mmsi": 230298000,
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     24.965008,
+     60.16966
+    ]
+   },
+   "properties": {
+    "mmsi": 230298000,
+    "sog": 0,
+    "cog": 169.3,
+    "navStat": 5,
+    "rot": -128,
+    "posAcc": true,
+    "raim": false,
+    "heading": 511,
+    "timestamp": 36,
+    "timestampExternal": 1794670477207
+   }
+  }
+ ]
+}

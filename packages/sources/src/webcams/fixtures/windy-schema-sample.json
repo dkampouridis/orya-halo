@@ -1,0 +1,86 @@
+{
+  "_note": "NOT a recorded response. No Windy API key was available, so this sample is built from the published OpenAPI schema and its example values (https://api.windy.com/webcams/api/v3/docs, read 2026-11-14). Replace it with a recorded response once a key exists.",
+  "clusters": [
+    {
+      "webcamId": 1179853135,
+      "title": "Sydney: Sydney Harbour Bridge - Sydney Opera House",
+      "status": "active",
+      "viewCount": 1282618,
+      "lastUpdatedOn": "2012-03-08T12:17:24.000Z",
+      "clusterSize": 300,
+      "location": {
+        "latitude": -33.84903,
+        "longitude": 151.21559,
+        "city": "Sydney",
+        "region": "New South Wales",
+        "region_code": "AU.02",
+        "country": "Australia",
+        "country_code": "AU",
+        "continent": "Oceania",
+        "continent_code": "OC"
+      }
+    },
+    {
+      "webcamId": 1240000001,
+      "title": "Manly: Beach",
+      "status": "active",
+      "viewCount": 5120,
+      "lastUpdatedOn": "2026-11-14T09:00:00.000Z",
+      "clusterSize": 4,
+      "location": { "latitude": -33.7969, "longitude": 151.2877, "city": "Manly", "region": "New South Wales", "country": "Australia" }
+    },
+    {
+      "webcamId": 1240000002,
+      "title": "Switched off",
+      "status": "inactive",
+      "viewCount": 12,
+      "lastUpdatedOn": "2020-01-01T00:00:00.000Z",
+      "location": { "latitude": -33.9, "longitude": 151.1, "city": "Sydney", "region": "New South Wales", "country": "Australia" }
+    },
+    {
+      "webcamId": 1240000003,
+      "title": "No position",
+      "status": "active",
+      "viewCount": 1,
+      "lastUpdatedOn": "2026-11-14T09:00:00.000Z"
+    }
+  ],
+  "webcam": {
+    "webcamId": 1179853135,
+    "title": "Sydney: Sydney Harbour Bridge - Sydney Opera House",
+    "status": "active",
+    "viewCount": 1282618,
+    "lastUpdatedOn": "2012-03-08T12:17:24.000Z",
+    "images": {
+      "current": {
+        "icon": "https://images-webcams.windy.com/35/1179853135/current/icon/1179853135.jpg?token=example",
+        "thumbnail": "https://images-webcams.windy.com/35/1179853135/current/thumbnail/1179853135.jpg?token=example",
+        "preview": "https://images-webcams.windy.com/35/1179853135/current/preview/1179853135.jpg?token=example"
+      },
+      "sizes": {
+        "icon": { "width": 48, "height": 48 },
+        "thumbnail": { "width": 200, "height": 112 },
+        "preview": { "width": 400, "height": 224 }
+      },
+      "daylight": {}
+    },
+    "location": {
+      "latitude": -33.84903,
+      "longitude": 151.21559,
+      "city": "Sydney",
+      "region": "New South Wales",
+      "country": "Australia"
+    },
+    "player": {
+      "day": "https://webcams.windy.com/webcams/public/embed/player/1179853135/day",
+      "month": "https://webcams.windy.com/webcams/public/embed/player/1179853135/month",
+      "year": "https://webcams.windy.com/webcams/public/embed/player/1179853135/year",
+      "lifetime": "https://webcams.windy.com/webcams/public/embed/player/1179853135/lifetime"
+    },
+    "urls": {
+      "detail": "https://webcams.windy.com/webcams/1179853135",
+      "edit": "https://webcams-admin.windy.com/webcams/1179853135",
+      "provider": "https://example.org/"
+    }
+  }
+}

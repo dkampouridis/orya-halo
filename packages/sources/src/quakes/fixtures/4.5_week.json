@@ -1,0 +1,373 @@
+{
+ "type": "FeatureCollection",
+ "metadata": {
+  "generated": 1794669569000,
+  "url": "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_week.geojson",
+  "title": "USGS Magnitude 4.5+ Earthquakes, Past Week",
+  "status": 200,
+  "api": "2.8.2",
+  "count": 9
+ },
+ "features": [
+  {
+   "type": "Feature",
+   "properties": {
+    "mag": 5.5,
+    "place": "northern Mid-Atlantic Ridge",
+    "time": 1794648373073,
+    "updated": 1794655941086,
+    "tz": null,
+    "url": "https://earthquake.usgs.gov/earthquakes/eventpage/us7000ty84",
+    "detail": "https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/us7000ty84.geojson",
+    "felt": null,
+    "cdi": null,
+    "mmi": 0,
+    "alert": "green",
+    "status": "reviewed",
+    "tsunami": 0,
+    "sig": 465,
+    "net": "us",
+    "code": "7000ty84",
+    "ids": ",us7000ty84,",
+    "sources": ",us,",
+    "types": ",losspager,moment-tensor,origin,phase-data,shakemap,",
+    "nst": 77,
+    "dmin": 16.101,
+    "rms": 0.79,
+    "gap": 65,
+    "magType": "mww",
+    "type": "earthquake",
+    "title": "M 5.5 - northern Mid-Atlantic Ridge"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -42.6346,
+     30.122,
+     10
+    ]
+   },
+   "id": "us7000ty84"
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "mag": 5.2,
+    "place": "State of Yap, Federated States of Micronesia",
+    "time": 1794639146706,
+    "updated": 1794640083040,
+    "tz": null,
+    "url": "https://earthquake.usgs.gov/earthquakes/eventpage/us7000ty7d",
+    "detail": "https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/us7000ty7d.geojson",
+    "felt": null,
+    "cdi": null,
+    "mmi": null,
+    "alert": null,
+    "status": "reviewed",
+    "tsunami": 0,
+    "sig": 416,
+    "net": "us",
+    "code": "7000ty7d",
+    "ids": ",us7000ty7d,",
+    "sources": ",us,",
+    "types": ",origin,phase-data,",
+    "nst": 92,
+    "dmin": 4.968,
+    "rms": 0.85,
+    "gap": 64,
+    "magType": "mb",
+    "type": "earthquake",
+    "title": "M 5.2 - State of Yap, Federated States of Micronesia"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     147.3631,
+     9.7032,
+     10
+    ]
+   },
+   "id": "us7000ty7d"
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "mag": 5.2,
+    "place": "off the west coast of northern Sumatra",
+    "time": 1794625169180,
+    "updated": 1794630665644,
+    "tz": null,
+    "url": "https://earthquake.usgs.gov/earthquakes/eventpage/us7000ty6n",
+    "detail": "https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/us7000ty6n.geojson",
+    "felt": 1,
+    "cdi": 1,
+    "mmi": null,
+    "alert": null,
+    "status": "reviewed",
+    "tsunami": 0,
+    "sig": 416,
+    "net": "us",
+    "code": "7000ty6n",
+    "ids": ",us7000ty6n,",
+    "sources": ",us,",
+    "types": ",dyfi,origin,phase-data,",
+    "nst": 47,
+    "dmin": 8.046,
+    "rms": 1.36,
+    "gap": 59,
+    "magType": "mb",
+    "type": "earthquake",
+    "title": "M 5.2 - off the west coast of northern Sumatra"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     92.8261,
+     3.304,
+     10
+    ]
+   },
+   "id": "us7000ty6n"
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "mag": 5.8,
+    "place": "79 km WSW of Changuillo, Peru",
+    "time": 1794588182131,
+    "updated": 1794638835040,
+    "tz": null,
+    "url": "https://earthquake.usgs.gov/earthquakes/eventpage/us7000ty1a",
+    "detail": "https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/us7000ty1a.geojson",
+    "felt": 7,
+    "cdi": 5,
+    "mmi": 4.493,
+    "alert": "green",
+    "status": "reviewed",
+    "tsunami": 0,
+    "sig": 521,
+    "net": "us",
+    "code": "7000ty1a",
+    "ids": ",us7000ty1a,",
+    "sources": ",us,",
+    "types": ",dyfi,ground-failure,losspager,moment-tensor,origin,phase-data,shakemap,",
+    "nst": 65,
+    "dmin": 3.131,
+    "rms": 1.02,
+    "gap": 133,
+    "magType": "mww",
+    "type": "earthquake",
+    "title": "M 5.8 - 79 km WSW of Changuillo, Peru"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -75.8807,
+     -14.9934,
+     10
+    ]
+   },
+   "id": "us7000ty1a"
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "mag": 5.8,
+    "place": "148 km NW of Kavieng, Papua New Guinea",
+    "time": 1794521046729,
+    "updated": 1794607944040,
+    "tz": null,
+    "url": "https://earthquake.usgs.gov/earthquakes/eventpage/us7000txwp",
+    "detail": "https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/us7000txwp.geojson",
+    "felt": null,
+    "cdi": null,
+    "mmi": 6.916,
+    "alert": "green",
+    "status": "reviewed",
+    "tsunami": 0,
+    "sig": 518,
+    "net": "us",
+    "code": "7000txwp",
+    "ids": ",us7000txwp,",
+    "sources": ",us,",
+    "types": ",ground-failure,losspager,moment-tensor,origin,phase-data,shakemap,",
+    "nst": 83,
+    "dmin": 2.56,
+    "rms": 1,
+    "gap": 62,
+    "magType": "mww",
+    "type": "earthquake",
+    "title": "M 5.8 - 148 km NW of Kavieng, Papua New Guinea"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     149.8877,
+     -1.5882,
+     10
+    ]
+   },
+   "id": "us7000txwp"
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "mag": 6.4,
+    "place": "30 km WSW of Lata, Solomon Islands",
+    "time": 1794195299466,
+    "updated": 1794606511187,
+    "tz": null,
+    "url": "https://earthquake.usgs.gov/earthquakes/eventpage/us7000tx16",
+    "detail": "https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/us7000tx16.geojson",
+    "felt": 2,
+    "cdi": 5.8,
+    "mmi": 6.361,
+    "alert": "green",
+    "status": "reviewed",
+    "tsunami": 0,
+    "sig": 631,
+    "net": "us",
+    "code": "7000tx16",
+    "ids": ",us7000tx16,",
+    "sources": ",us,",
+    "types": ",dyfi,ground-failure,losspager,moment-tensor,origin,phase-data,shakemap,",
+    "nst": 129,
+    "dmin": 5.706,
+    "rms": 0.87,
+    "gap": 29,
+    "magType": "mww",
+    "type": "earthquake",
+    "title": "M 6.4 - 30 km WSW of Lata, Solomon Islands"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     165.5616,
+     -10.8669,
+     17
+    ]
+   },
+   "id": "us7000tx16"
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "mag": 5.8,
+    "place": "central Mid-Atlantic Ridge",
+    "time": 1794093425477,
+    "updated": 1794180171933,
+    "tz": null,
+    "url": "https://earthquake.usgs.gov/earthquakes/eventpage/us7000twun",
+    "detail": "https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/us7000twun.geojson",
+    "felt": null,
+    "cdi": null,
+    "mmi": 0,
+    "alert": "green",
+    "status": "reviewed",
+    "tsunami": 0,
+    "sig": 518,
+    "net": "us",
+    "code": "7000twun",
+    "ids": ",us7000twun,",
+    "sources": ",us,",
+    "types": ",losspager,moment-tensor,origin,phase-data,shakemap,",
+    "nst": 146,
+    "dmin": 13.232,
+    "rms": 0.98,
+    "gap": 86,
+    "magType": "mww",
+    "type": "earthquake",
+    "title": "M 5.8 - central Mid-Atlantic Ridge"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -36.8221,
+     7.4618,
+     10
+    ]
+   },
+   "id": "us7000twun"
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "mag": 4.5,
+    "place": "11 km ESE of Pedasí, Panama",
+    "time": 1794067312257,
+    "updated": 1794081191040,
+    "tz": null,
+    "url": "https://earthquake.usgs.gov/earthquakes/eventpage/us7000twsy",
+    "detail": "https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/us7000twsy.geojson",
+    "felt": null,
+    "cdi": null,
+    "mmi": null,
+    "alert": null,
+    "status": "reviewed",
+    "tsunami": 0,
+    "sig": 312,
+    "net": "us",
+    "code": "7000twsy",
+    "ids": ",us7000twsy,",
+    "sources": ",us,",
+    "types": ",origin,phase-data,",
+    "nst": 21,
+    "dmin": 1.651,
+    "rms": 0.82,
+    "gap": 129,
+    "magType": "mb",
+    "type": "earthquake",
+    "title": "M 4.5 - 11 km ESE of Pedasí, Panama"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -79.921,
+     7.5067,
+     10
+    ]
+   },
+   "id": "us7000twsy"
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "mag": 4.9,
+    "place": "73 km NNW of Khorixas, Namibia",
+    "time": 1794064970507,
+    "updated": 1794418650321,
+    "tz": null,
+    "url": "https://earthquake.usgs.gov/earthquakes/eventpage/us7000twss",
+    "detail": "https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/us7000twss.geojson",
+    "felt": 3,
+    "cdi": 2.2,
+    "mmi": null,
+    "alert": null,
+    "status": "reviewed",
+    "tsunami": 0,
+    "sig": 370,
+    "net": "us",
+    "code": "7000twss",
+    "ids": ",us7000twss,",
+    "sources": ",us,",
+    "types": ",dyfi,origin,phase-data,",
+    "nst": 108,
+    "dmin": 2.708,
+    "rms": 0.62,
+    "gap": 26,
+    "magType": "mb",
+    "type": "earthquake",
+    "title": "M 4.9 - 73 km NNW of Khorixas, Namibia"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     14.7685,
+     -19.7325,
+     10
+    ]
+   },
+   "id": "us7000twss"
+  }
+ ]
+}

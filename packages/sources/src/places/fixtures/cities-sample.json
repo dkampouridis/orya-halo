@@ -1,0 +1,618 @@
+{
+ "source": "GeoNames cities15000, rows selected by name",
+ "countries": {
+  "AU": "Australia",
+  "BR": "Brazil",
+  "CA": "Canada",
+  "CL": "Chile",
+  "CR": "Costa Rica",
+  "DE": "Germany",
+  "EG": "Egypt",
+  "ES": "Spain",
+  "FI": "Finland",
+  "FR": "France",
+  "GB": "United Kingdom",
+  "GR": "Greece",
+  "IN": "India",
+  "IS": "Iceland",
+  "JP": "Japan",
+  "LU": "Luxembourg",
+  "MX": "Mexico",
+  "NO": "Norway",
+  "PE": "Peru",
+  "PH": "Philippines",
+  "PL": "Poland",
+  "TD": "Chad",
+  "TT": "Trinidad and Tobago",
+  "UA": "Ukraine",
+  "US": "United States",
+  "ZA": "South Africa"
+ },
+ "places": [
+  {
+   "name": "Sydney",
+   "ascii": "Sydney",
+   "country": "AU",
+   "region": "New South Wales",
+   "lon": 151.20732,
+   "lat": -33.86785,
+   "population": 5638830
+  },
+  {
+   "name": "Newcastle",
+   "ascii": "Newcastle",
+   "country": "AU",
+   "region": "New South Wales",
+   "lon": 151.7801,
+   "lat": -32.92953,
+   "population": 508437
+  },
+  {
+   "name": "Parintins",
+   "ascii": "Parintins",
+   "country": "BR",
+   "region": "Amazonas",
+   "lon": -56.73583,
+   "lat": -2.62833,
+   "population": 101855
+  },
+  {
+   "name": "Santiago",
+   "ascii": "Santiago",
+   "country": "BR",
+   "region": "Rio Grande do Sul",
+   "lon": -54.86722,
+   "lat": -29.19167,
+   "population": 48938
+  },
+  {
+   "name": "London",
+   "ascii": "London",
+   "country": "CA",
+   "region": "Ontario",
+   "lon": -81.23304,
+   "lat": 42.98339,
+   "population": 422324
+  },
+  {
+   "name": "Paradise",
+   "ascii": "Paradise",
+   "country": "CA",
+   "region": "Newfoundland and Labrador",
+   "lon": -52.88136,
+   "lat": 47.52909,
+   "population": 22957
+  },
+  {
+   "name": "Yorkton",
+   "ascii": "Yorkton",
+   "country": "CA",
+   "region": "Saskatchewan",
+   "lon": -102.46766,
+   "lat": 51.2167,
+   "population": 16343
+  },
+  {
+   "name": "Sydney",
+   "ascii": "Sydney",
+   "country": "CA",
+   "region": "Nova Scotia",
+   "lon": -60.1831,
+   "lat": 46.1351,
+   "population": 105968
+  },
+  {
+   "name": "Santiago",
+   "ascii": "Santiago",
+   "country": "CL",
+   "region": "Santiago Metropolitan",
+   "lon": -70.64827,
+   "lat": -33.45694,
+   "population": 4837295
+  },
+  {
+   "name": "San José",
+   "ascii": "San Jose",
+   "country": "CR",
+   "region": "Alajuela Province",
+   "lon": -85.13572,
+   "lat": 10.95192,
+   "population": 31430
+  },
+  {
+   "name": "San José",
+   "ascii": "San Jose",
+   "country": "CR",
+   "region": "San José",
+   "lon": -84.08489,
+   "lat": 9.93388,
+   "population": 335007
+  },
+  {
+   "name": "Munich",
+   "ascii": "Munich",
+   "country": "DE",
+   "region": "Bavaria",
+   "lon": 11.57549,
+   "lat": 48.13743,
+   "population": 1505005
+  },
+  {
+   "name": "Mülheim",
+   "ascii": "Muelheim",
+   "country": "DE",
+   "region": "North Rhine-Westphalia",
+   "lon": 6.87967,
+   "lat": 51.43218,
+   "population": 173050
+  },
+  {
+   "name": "Mülheim",
+   "ascii": "Muelheim",
+   "country": "DE",
+   "region": "North Rhine-Westphalia",
+   "lon": 7.00384,
+   "lat": 50.96639,
+   "population": 41711
+  },
+  {
+   "name": "Cairo",
+   "ascii": "Cairo",
+   "country": "EG",
+   "region": "Cairo",
+   "lon": 31.24967,
+   "lat": 30.06263,
+   "population": 9606916
+  },
+  {
+   "name": "Los Angeles",
+   "ascii": "Los Angeles",
+   "country": "ES",
+   "region": "Madrid",
+   "lon": -3.69914,
+   "lat": 40.35579,
+   "population": 34827
+  },
+  {
+   "name": "Vantaa",
+   "ascii": "Vantaa",
+   "country": "FI",
+   "region": "Uusimaa",
+   "lon": 25.04099,
+   "lat": 60.29414,
+   "population": 252724
+  },
+  {
+   "name": "Helsinki",
+   "ascii": "Helsinki",
+   "country": "FI",
+   "region": "Uusimaa",
+   "lon": 24.93545,
+   "lat": 60.16952,
+   "population": 658864
+  },
+  {
+   "name": "Espoo",
+   "ascii": "Espoo",
+   "country": "FI",
+   "region": "Uusimaa",
+   "lon": 24.6522,
+   "lat": 60.2052,
+   "population": 323910
+  },
+  {
+   "name": "Saint-Étienne",
+   "ascii": "Saint-Etienne",
+   "country": "FR",
+   "region": "Auvergne-Rhône-Alpes",
+   "lon": 4.39,
+   "lat": 45.43389,
+   "population": 176280
+  },
+  {
+   "name": "Paris",
+   "ascii": "Paris",
+   "country": "FR",
+   "region": "Île-de-France",
+   "lon": 2.3488,
+   "lat": 48.85341,
+   "population": 2138551
+  },
+  {
+   "name": "York",
+   "ascii": "York",
+   "country": "GB",
+   "region": "England",
+   "lon": -1.08271,
+   "lat": 53.95763,
+   "population": 156135
+  },
+  {
+   "name": "Newcastle upon Tyne",
+   "ascii": "Newcastle upon Tyne",
+   "country": "GB",
+   "region": "England",
+   "lon": -1.61396,
+   "lat": 54.97328,
+   "population": 300125
+  },
+  {
+   "name": "Newcastle under Lyme",
+   "ascii": "Newcastle under Lyme",
+   "country": "GB",
+   "region": "England",
+   "lon": -2.23333,
+   "lat": 53,
+   "population": 127727
+  },
+  {
+   "name": "London",
+   "ascii": "London",
+   "country": "GB",
+   "region": "England",
+   "lon": -0.12574,
+   "lat": 51.50853,
+   "population": 8961989
+  },
+  {
+   "name": "Athens",
+   "ascii": "Athens",
+   "country": "GR",
+   "region": "Attica",
+   "lon": 23.72784,
+   "lat": 37.98376,
+   "population": 664046
+  },
+  {
+   "name": "New Delhi",
+   "ascii": "New Delhi",
+   "country": "IN",
+   "region": "Delhi",
+   "lon": 77.2148,
+   "lat": 28.62137,
+   "population": 317797
+  },
+  {
+   "name": "Delhi",
+   "ascii": "Delhi",
+   "country": "IN",
+   "region": "Delhi",
+   "lon": 77.23149,
+   "lat": 28.65195,
+   "population": 11034555
+  },
+  {
+   "name": "Reykjavík",
+   "ascii": "Reykjavik",
+   "country": "IS",
+   "region": "Capital Region",
+   "lon": -21.89541,
+   "lat": 64.13548,
+   "population": 118918
+  },
+  {
+   "name": "Tokyo",
+   "ascii": "Tokyo",
+   "country": "JP",
+   "region": "Tokyo",
+   "lon": 139.69171,
+   "lat": 35.6895,
+   "population": 9733276
+  },
+  {
+   "name": "Luxembourg",
+   "ascii": "Luxembourg",
+   "country": "LU",
+   "region": "Luxembourg",
+   "lon": 6.13268,
+   "lat": 49.60982,
+   "population": 76684
+  },
+  {
+   "name": "Santiago",
+   "ascii": "Santiago",
+   "country": "MX",
+   "region": "Nuevo León",
+   "lon": -100.15399,
+   "lat": 25.42596,
+   "population": 36840
+  },
+  {
+   "name": "Ålesund",
+   "ascii": "Alesund",
+   "country": "NO",
+   "region": "Møre og Romsdal",
+   "lon": 6.15492,
+   "lat": 62.47225,
+   "population": 52626
+  },
+  {
+   "name": "Santiago",
+   "ascii": "Santiago",
+   "country": "PE",
+   "region": "Cuzco Department",
+   "lon": -71.9843,
+   "lat": -13.52728,
+   "population": 64075
+  },
+  {
+   "name": "Santiago",
+   "ascii": "Santiago",
+   "country": "PH",
+   "region": "Cagayan Valley",
+   "lon": 121.5487,
+   "lat": 16.68808,
+   "population": 108414
+  },
+  {
+   "name": "San Jose",
+   "ascii": "San Jose",
+   "country": "PH",
+   "region": "Bicol Region",
+   "lon": 123.55,
+   "lat": 13.35,
+   "population": 35768
+  },
+  {
+   "name": "San Jose",
+   "ascii": "San Jose",
+   "country": "PH",
+   "region": "Mimaropa",
+   "lon": 121.06761,
+   "lat": 12.35275,
+   "population": 143495
+  },
+  {
+   "name": "San Jose",
+   "ascii": "San Jose",
+   "country": "PH",
+   "region": "Caraga",
+   "lon": 125.56833,
+   "lat": 10.18,
+   "population": 26735
+  },
+  {
+   "name": "Łódź",
+   "ascii": "Lodz",
+   "country": "PL",
+   "region": "Łódź Voivodeship",
+   "lon": 19.47395,
+   "lat": 51.77058,
+   "population": 639890
+  },
+  {
+   "name": "N'Djamena",
+   "ascii": "N'Djamena",
+   "country": "TD",
+   "region": "N’Djaména",
+   "lon": 15.0444,
+   "lat": 12.10672,
+   "population": 1359526
+  },
+  {
+   "name": "Paradise",
+   "ascii": "Paradise",
+   "country": "TT",
+   "region": "Tunapuna/Piarco",
+   "lon": -61.36298,
+   "lat": 10.65298,
+   "population": 15067
+  },
+  {
+   "name": "Kyiv",
+   "ascii": "Kyiv",
+   "country": "UA",
+   "region": "Kyiv City",
+   "lon": 30.5238,
+   "lat": 50.45466,
+   "population": 2952301
+  },
+  {
+   "name": "Newark",
+   "ascii": "Newark",
+   "country": "US",
+   "region": "Delaware",
+   "lon": -75.74966,
+   "lat": 39.68372,
+   "population": 33817
+  },
+  {
+   "name": "Athens",
+   "ascii": "Athens",
+   "country": "US",
+   "region": "Georgia",
+   "lon": -83.37794,
+   "lat": 33.96095,
+   "population": 127315
+  },
+  {
+   "name": "Springfield",
+   "ascii": "Springfield",
+   "country": "US",
+   "region": "Illinois",
+   "lon": -89.64371,
+   "lat": 39.80172,
+   "population": 114394
+  },
+  {
+   "name": "Springfield",
+   "ascii": "Springfield",
+   "country": "US",
+   "region": "Missouri",
+   "lon": -93.29824,
+   "lat": 37.21533,
+   "population": 170188
+  },
+  {
+   "name": "Athens",
+   "ascii": "Athens",
+   "country": "US",
+   "region": "Ohio",
+   "lon": -82.10126,
+   "lat": 39.32924,
+   "population": 25044
+  },
+  {
+   "name": "Springfield",
+   "ascii": "Springfield",
+   "country": "US",
+   "region": "Ohio",
+   "lon": -83.80882,
+   "lat": 39.92423,
+   "population": 59680
+  },
+  {
+   "name": "Springfield",
+   "ascii": "Springfield",
+   "country": "US",
+   "region": "Pennsylvania",
+   "lon": -75.32019,
+   "lat": 39.93067,
+   "population": 23363
+  },
+  {
+   "name": "York",
+   "ascii": "York",
+   "country": "US",
+   "region": "Pennsylvania",
+   "lon": -76.72774,
+   "lat": 39.9626,
+   "population": 43992
+  },
+  {
+   "name": "Springfield",
+   "ascii": "Springfield",
+   "country": "US",
+   "region": "Tennessee",
+   "lon": -86.885,
+   "lat": 36.50921,
+   "population": 16808
+  },
+  {
+   "name": "Paris",
+   "ascii": "Paris",
+   "country": "US",
+   "region": "Texas",
+   "lon": -95.55551,
+   "lat": 33.66094,
+   "population": 24782
+  },
+  {
+   "name": "Springfield",
+   "ascii": "Springfield",
+   "country": "US",
+   "region": "Virginia",
+   "lon": -77.1872,
+   "lat": 38.78928,
+   "population": 30484
+  },
+  {
+   "name": "Athens",
+   "ascii": "Athens",
+   "country": "US",
+   "region": "Alabama",
+   "lon": -86.97219,
+   "lat": 34.80243,
+   "population": 24966
+  },
+  {
+   "name": "Springfield",
+   "ascii": "Springfield",
+   "country": "US",
+   "region": "Massachusetts",
+   "lon": -72.58981,
+   "lat": 42.10148,
+   "population": 154341
+  },
+  {
+   "name": "Newark",
+   "ascii": "Newark",
+   "country": "US",
+   "region": "New Jersey",
+   "lon": -74.17237,
+   "lat": 40.73566,
+   "population": 281944
+  },
+  {
+   "name": "New York City",
+   "ascii": "New York City",
+   "country": "US",
+   "region": "New York",
+   "lon": -74.00597,
+   "lat": 40.71427,
+   "population": 8804190
+  },
+  {
+   "name": "Newark",
+   "ascii": "Newark",
+   "country": "US",
+   "region": "Ohio",
+   "lon": -82.40126,
+   "lat": 40.05812,
+   "population": 47986
+  },
+  {
+   "name": "Los Angeles",
+   "ascii": "Los Angeles",
+   "country": "US",
+   "region": "California",
+   "lon": -118.24368,
+   "lat": 34.05223,
+   "population": 3820914
+  },
+  {
+   "name": "Newark",
+   "ascii": "Newark",
+   "country": "US",
+   "region": "California",
+   "lon": -122.04024,
+   "lat": 37.52966,
+   "population": 45336
+  },
+  {
+   "name": "Paradise",
+   "ascii": "Paradise",
+   "country": "US",
+   "region": "California",
+   "lon": -121.62192,
+   "lat": 39.75961,
+   "population": 26476
+  },
+  {
+   "name": "San Jose",
+   "ascii": "San Jose",
+   "country": "US",
+   "region": "California",
+   "lon": -121.89496,
+   "lat": 37.33939,
+   "population": 997368
+  },
+  {
+   "name": "Paradise",
+   "ascii": "Paradise",
+   "country": "US",
+   "region": "Nevada",
+   "lon": -115.14666,
+   "lat": 36.09719,
+   "population": 223167
+  },
+  {
+   "name": "Springfield",
+   "ascii": "Springfield",
+   "country": "US",
+   "region": "Oregon",
+   "lon": -123.02203,
+   "lat": 44.04624,
+   "population": 60870
+  },
+  {
+   "name": "Newcastle",
+   "ascii": "Newcastle",
+   "country": "ZA",
+   "region": "KwaZulu-Natal",
+   "lon": 29.9318,
+   "lat": -27.75796,
+   "population": 404838
+  }
+ ]
+}

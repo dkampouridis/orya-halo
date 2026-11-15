@@ -1,0 +1,168 @@
+/* The globe's own surface. Space is true black; everything else is drawn in WebGL. */
+.halo-engine {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #000;
+  transition: opacity 100ms linear;
+}
+
+/*
+ * MapLibre's layout rules, and only those. Its own stylesheet is 70 kB of
+ * buttons, popups, markers and icons the engine never creates; these are the
+ * dozen declarations a bare map needs, taken from maplibre-gl 6.18's
+ * `maplibre-gl.css`. The touch-action rules matter: without them the browser
+ * scrolls or zooms the page instead of handing gestures to the map.
+ */
+.halo-engine.maplibregl-map {
+  overflow: hidden;
+  position: absolute;
+  -webkit-tap-highlight-color: rgb(0 0 0 / 0);
+  -webkit-touch-callout: none;
+}
+
+.halo-engine .maplibregl-canvas {
+  position: absolute;
+  left: 0;
+  top: 0;
+  outline: none;
+}
+
+.halo-engine .maplibregl-canvas-container.maplibregl-interactive {
+  cursor: grab;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.halo-engine .maplibregl-canvas-container.maplibregl-interactive:active {
+  cursor: grabbing;
+}
+
+.halo-engine .maplibregl-canvas-container.maplibregl-touch-zoom-rotate,
+.halo-engine .maplibregl-canvas-container.maplibregl-touch-zoom-rotate .maplibregl-canvas {
+  touch-action: pan-x pan-y;
+}
+
+.halo-engine .maplibregl-canvas-container.maplibregl-touch-drag-pan,
+.halo-engine .maplibregl-canvas-container.maplibregl-touch-drag-pan .maplibregl-canvas {
+  touch-action: pinch-zoom;
+}
+
+.halo-engine .maplibregl-canvas-container.maplibregl-touch-zoom-rotate.maplibregl-touch-drag-pan,
+.halo-engine
+  .maplibregl-canvas-container.maplibregl-touch-zoom-rotate.maplibregl-touch-drag-pan
+  .maplibregl-canvas {
+  touch-action: none;
+}
+
+/* The corner the data canvas is mounted in. The other three stay empty. */
+.halo-engine .maplibregl-ctrl-top-left,
+.halo-engine .maplibregl-ctrl-top-right,
+.halo-engine .maplibregl-ctrl-bottom-left,
+.halo-engine .maplibregl-ctrl-bottom-right {
+  position: absolute;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.halo-engine .maplibregl-ctrl-top-left {
+  top: 0;
+  left: 0;
+}
+
+/* Shift-drag to zoom to a box: a halo outline, like every other selection. */
+.halo-engine .maplibregl-boxzoom {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  background: rgb(170 205 255 / 0.07);
+  border: 1px solid #bcd9ff;
+}
+
+/*
+ * Map and data credits (DESIGN.md "Micro": Archivo 11/14, weight 500, width
+ * 82). Several licences ask for credit on the map itself, so this sits in the
+ * engine's corner rather than in the HUD and does not fade with it. The text
+ * has no plate behind it; a black bloom (the mockup's `--on-space`) keeps it
+ * legible over city lights and the lit limb.
+ */
+.halo-credits {
+  position: absolute;
+  right: 16px;
+  bottom: calc(8px + var(--halo-credits-lift, 0px));
+  z-index: 3;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0 10px;
+  /*
+   * The corner beside the time tape, which is 600px wide in the middle of the
+   * bottom edge (DESIGN.md): the credits take what is left of the right half
+   * and wrap upwards rather than run under a control.
+   */
+  max-width: max(240px, min(50% - 356px, 560px));
+  margin: 0;
+  pointer-events: none;
+  color: #9aa8ba;
+  font:
+    500 11px/14px "Archivo Variable",
+    "Archivo",
+    system-ui,
+    sans-serif;
+  font-stretch: 82%;
+  letter-spacing: 0;
+  text-align: right;
+  text-shadow:
+    0 0 2px #000,
+    0 0 12px rgb(0 0 0 / 0.85);
+  transition: bottom 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.halo-credits[hidden] {
+  display: none;
+}
+
+.halo-credit {
+  color: inherit;
+  white-space: nowrap;
+}
+
+a.halo-credit {
+  pointer-events: auto;
+  text-decoration: underline;
+  text-decoration-color: rgb(154 168 186 / 0.45);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+a.halo-credit:hover {
+  color: #e9eff6;
+  text-decoration-color: currentcolor;
+}
+
+a.halo-credit:focus-visible {
+  color: #e9eff6;
+  outline: 1px solid #bcd9ff;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Phones: the screen margin is 12px and a credit may be longer than the screen is wide. */
+@media (max-width: 719px) {
+  .halo-credits {
+    right: 12px;
+    max-width: calc(100% - 24px);
+  }
+
+  .halo-credit {
+    white-space: normal;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .halo-credits {
+    transition: none;
+  }
+}

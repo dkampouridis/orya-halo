@@ -1,0 +1,29 @@
+{
+  "name": "@orya-halo/layers",
+  "version": "0.1.0",
+  "private": true,
+  "description": "deck.gl layers and shaders for Orya Halo.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "test": "vp test run",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@deck.gl/core": "^9.4.1",
+    "@deck.gl/layers": "^9.4.1",
+    "@luma.gl/core": "^9.4.0",
+    "@luma.gl/engine": "^9.4.0",
+    "@luma.gl/shadertools": "^9.4.0",
+    "@orya-halo/schema": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vite-plus": "catalog:"
+  }
+}

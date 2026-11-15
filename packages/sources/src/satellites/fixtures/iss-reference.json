@@ -1,0 +1,27 @@
+{
+  "source": "https://api.wheretheiss.at/v1/satellites/25544/positions (queried 2026-11-14T15:19Z)",
+  "note": "Independent SGP4 implementation and an earlier element set (epoch 2026-11-13T21:59Z) than fixtures/stations.csv.",
+  "positions": [
+    {
+      "timestamp": 1794657600,
+      "latitude": 14.766202643586,
+      "longitude": 54.626820861701,
+      "altitudeKm": 413.59608161266,
+      "velocityKmh": 27605.483593488
+    },
+    {
+      "timestamp": 1794657660,
+      "latitude": 17.745150402148,
+      "longitude": 56.988201020915,
+      "altitudeKm": 413.70569571735,
+      "velocityKmh": 27606.35783065
+    },
+    {
+      "timestamp": 1794663000,
+      "latitude": 6.0477866050735,
+      "longitude": 24.563977077333,
+      "altitudeKm": 413.93209058433,
+      "velocityKmh": 27601.56816534
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+# Fly.io configuration for the gateway. Nothing here deploys by itself:
+#   fly launch --no-deploy --copy-config   (once, to create the app)
+#   fly secrets set AISSTREAM_API_KEY=...  (optional)
+#   fly deploy
+#
+# Why a long-running machine and not serverless: every client holds one
+# WebSocket open for as long as the tab is, the world state lives in memory,
+# and the upstream connections (and their rate limits) must be shared by all
+# clients. A function that is frozen between requests can do none of that.
+
+app = "orya-halo-gateway"
+primary_region = "ams"
+
+# The gateway closes client sockets and stops its feeds on SIGINT or SIGTERM.
+kill_signal = "SIGINT"
+kill_timeout = 10
+
+[build]
+dockerfile = "Dockerfile"
+
+[env]
+BIND_ADDR = "0.0.0.0:8787"
+# Fly's proxy sets Fly-Client-IP; trust it for the per-address limit.
+TRUST_PROXY = "true"
+LOG_FORMAT = "json"
+# Set this to the site that serves the web app before going public.
+# ALLOWED_ORIGINS = "https://halo.example.org"
+
+[http_service]
+internal_port = 8787
+force_https = true
+# Never stop the machine: clients are connected and the state is in memory.
+auto_stop_machines = "off"
+auto_start_machines = true
+min_machines_running = 1
+
+[http_service.concurrency]
+# One WebSocket is one connection for as long as it is open.
+type = "connections"
+soft_limit = 1500
+hard_limit = 2000
+
+[[http_service.checks]]
+grace_period = "10s"
+interval = "15s"
+timeout = "3s"
+method = "GET"
+path = "/health"
+
+# Run exactly one machine. A second one would double every upstream request
+# and give its clients a different view of the world.
+# Measured: about 60 MB with 70,000 entities and no clients, about 150 MB
+# with 600 clients. 256 MB works for the keyless feeds; 512 MB leaves room
+# for worldwide ships.
+[[vm]]
+size = "shared-cpu-1x"
+memory = "512mb"

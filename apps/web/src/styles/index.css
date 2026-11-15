@@ -1,0 +1,19 @@
+/*
+ * Global stylesheet for Orya Halo. Tailwind v4 supplies the theme and utility layers; the
+ * HUD's own components live in hud.css, ported from the approved mockup
+ * (docs/mockup/mockup.css) and measured in docs/mockup/NOTES.md.
+ *
+ * Tailwind's preflight is left out on purpose: the globe (MapLibre) shares the page and
+ * relies on browser defaults. The HUD resets only its own subtree (see hud.css).
+ */
+@layer theme, base, components, utilities;
+
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+/* "standard" carries both axes (weight and width); the wght-only files would lose the widths. */
+@import "@fontsource-variable/archivo/standard.css";
+@import "@fontsource-variable/martian-mono/standard.css";
+
+@import "./tokens.css";
+@import "./hud.css" layer(components);

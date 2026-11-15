@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<image-list>
+	<image>
+		<key>H429F</key>
+		<region>Hong Kong Island</region>
+		<district>Southern</district>
+		<description>Aberdeen Praya Road near Fish Market [H429F]</description>
+		<easting>833549</easting>
+		<northing>812187</northing>
+		<latitude>22.24845</latitude>
+		<longitude>114.1505</longitude>
+		<url>https://tdcctv.data.one.gov.hk/H429F.JPG</url>
+	</image>	<image>
+		<key>H210F</key>
+		<region>Hong Kong Island</region>
+		<district>Wan Chai</district>
+		<description>Aberdeen Tunnel - Wan Chai Side [H210F]</description>
+		<easting>836525</easting>
+		<northing>815094</northing>
+		<latitude>22.2747</latitude>
+		<longitude>114.17936</longitude>
+		<url>https://tdcctv.data.one.gov.hk/H210F.JPG</url>
+	</image>	<image>
+		<key>H421F</key>
+		<region>Hong Kong Island</region>
+		<district>Southern</district>
+		<description>Aberdeen Tunnel - Aberdeen Side [H421F]</description>
+		<easting>836134</easting>
+		<northing>812344</northing>
+		<latitude>22.24986</latitude>
+		<longitude>114.17557</longitude>
+		<url>https://tdcctv.data.one.gov.hk/H421F.JPG</url>
+	</image>	<image>
+		<key>H422F2</key>
+		<region>Hong Kong Island</region>
+		<district>Southern</district>
+		<description>Ap Lei Chau Bridge Road near Aberdeen Police Station [H422F2]</description>
+		<easting>834595</easting>
+		<northing>812166</northing>
+		<latitude>22.248255958</latitude>
+		<longitude>114.160644465</longitude>
+		<url>https://tdcctv.data.one.gov.hk/H422F2.JPG</url>
+	</image>	<image>
+		<key>H904F</key>
+		<region>Hong Kong Island</region>
+		<district>Wan Chai</district>
+		<description>Canal Road Flyover near Gloucester Road [H904F]</description>
+		<easting>836731</easting>
+		<northing>815614</northing>
+		<latitude>22.2793944</latitude>
+		<longitude>114.1813669</longitude>
+		<url>https://tdcctv.data.one.gov.hk/H904F.JPG</url>
+	</image>	<image>
+		<key>H216F</key>
+		<region>Hong Kong Island</region>
+		<district>Wan Chai</district>
+		<description>Canal Road Flyover near Times Square [H216F]</description>
+		<easting>836735</easting>
+		<northing>815604</northing>
+		<latitude>22.27930409</latitude>
+		<longitude>114.1814057</longitude>
+		<url>https://tdcctv.data.one.gov.hk/H216F.JPG</url>
+	</image>	<image>
+		<key>H305F</key>
+		<region>Hong Kong Island</region>
+		<district>Wan Chai</district>
+		<description>Causeway Road near Hing Fat Street [H305F]</description>
+		<easting>837747</easting>
+		<northing>815875</northing>
+		<latitude>22.28175082</latitude>
+		<longitude>114.1912256</longitude>
+		<url>https://tdcctv.data.one.gov.hk/H305F.JPG</url>
+	</image>	<image>
+		<key>H106F</key>
+		<region>Hong Kong Island</region>
+		<district>Central &amp; Western</district>
+		<description>Connaught Road Central near Exchange Square [H106F]</description>
+		<easting>834091</easting>
+		<northing>816342</northing>
+		<latitude>22.2859674</latitude>
+		<longitude>114.1557495</longitude>
+		<url>https://tdcctv.data.one.gov.hk/H106F.JPG</url>
+	</image>	<image>
+		<key>H110F</key>
+		<region>Hong Kong Island</region>
+		<district>Central &amp; Western</district>
+		<description>Connaught Road Central near Shun Tak Centre [H110F]</description>
+		<easting>833813</easting>
+		<northing>816462</northing>
+		<latitude>22.28705</latitude>
+		<longitude>114.15305</longitude>
+		<url>https://tdcctv.data.one.gov.hk/H110F.JPG</url>
+	</image>	<image>
+		<key>TK110F</key>
+		<region>New Territories</region>
+		<district>Sai Kung</district>
+		<description>Chui Ling Road near Po Shun Road [TK110F]</description>
+		<easting>844286</easting>
+		<northing>818484</northing>
+		<latitude>22.30529</latitude>
+		<longitude>114.25469</longitude>
+		<url>https://tdcctv.data.one.gov.hk/TK110F.JPG</url>
+	</image>	<image>
+		<key>TK101F</key>
+		<region>New Territories</region>
+		<district>Sai Kung</district>
+		<description>Po Lam Road North near Po Hong Road [TK101F]</description>
+		<easting>843921</easting>
+		<northing>820782</northing>
+		<latitude>22.32604763</latitude>
+		<longitude>114.2511576</longitude>
+		<url>https://tdcctv.data.one.gov.hk/TK101F.JPG</url>
+	</image>	<image>
+		<key>TK105F</key>
+		<region>New Territories</region>
+		<district>Sai Kung</district>
+		<description>Po Shun Road near Tseung Kwan O Swimming Pool [TK105F]</description>
+		<easting>844979</easting>
+		<northing>819832</northing>
+		<latitude>22.31746</latitude>
+		<longitude>114.26142</longitude>
+		<url>https://tdcctv.data.one.gov.hk/TK105F.JPG</url>
+	</image></image-list>

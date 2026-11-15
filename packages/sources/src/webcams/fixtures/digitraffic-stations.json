@@ -1,0 +1,625 @@
+{
+ "type": "FeatureCollection",
+ "dataUpdatedTime": "2026-11-14T15:25:14Z",
+ "features": [
+  {
+   "type": "Feature",
+   "id": "C01503",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     23.99616,
+     60.05374,
+     0
+    ]
+   },
+   "properties": {
+    "id": "C01503",
+    "name": "kt51_Inkoo",
+    "collectionStatus": "GATHERING",
+    "dataUpdatedTime": "2026-11-14T03:25:34Z",
+    "presets": [
+     {
+      "id": "C0150301",
+      "inCollection": true
+     },
+     {
+      "id": "C0150302",
+      "inCollection": true
+     },
+     {
+      "id": "C0150309",
+      "inCollection": true
+     }
+    ],
+    "state": null
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "C01504",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     24.235601,
+     60.536727,
+     0
+    ]
+   },
+   "properties": {
+    "id": "C01504",
+    "name": "vt2_Karkkila_Korpi",
+    "collectionStatus": "GATHERING",
+    "dataUpdatedTime": "2026-11-14T03:26:54Z",
+    "presets": [
+     {
+      "id": "C0150401",
+      "inCollection": true
+     },
+     {
+      "id": "C0150402",
+      "inCollection": true
+     },
+     {
+      "id": "C0150409",
+      "inCollection": true
+     }
+    ],
+    "state": null
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "C01505",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     23.303264,
+     60.061798,
+     0
+    ]
+   },
+   "properties": {
+    "id": "C01505",
+    "name": "kt52_Raasepori_Tenhola",
+    "collectionStatus": "GATHERING",
+    "dataUpdatedTime": "2026-11-14T03:27:36Z",
+    "presets": [
+     {
+      "id": "C0150501",
+      "inCollection": true
+     },
+     {
+      "id": "C0150502",
+      "inCollection": true
+     },
+     {
+      "id": "C0150509",
+      "inCollection": true
+     }
+    ],
+    "state": null
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "C01506",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     24.241007,
+     60.311546,
+     0
+    ]
+   },
+   "properties": {
+    "id": "C01506",
+    "name": "vt25_Myllylampi",
+    "collectionStatus": "GATHERING",
+    "dataUpdatedTime": "2026-11-14T03:27:35Z",
+    "presets": [
+     {
+      "id": "C0150601",
+      "inCollection": true
+     },
+     {
+      "id": "C0150602",
+      "inCollection": true
+     },
+     {
+      "id": "C0150603",
+      "inCollection": true
+     },
+     {
+      "id": "C0150604",
+      "inCollection": true
+     },
+     {
+      "id": "C0150609",
+      "inCollection": true
+     }
+    ],
+    "state": null
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "C01507",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     23.021452,
+     59.856454,
+     0
+    ]
+   },
+   "properties": {
+    "id": "C01507",
+    "name": "vt25_Hanko",
+    "collectionStatus": "GATHERING",
+    "dataUpdatedTime": "2026-11-14T03:25:53Z",
+    "presets": [
+     {
+      "id": "C0150701",
+      "inCollection": true
+     },
+     {
+      "id": "C0150702",
+      "inCollection": true
+     },
+     {
+      "id": "C0150709",
+      "inCollection": true
+     }
+    ],
+    "state": null
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "C01508",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     25.350988,
+     60.671599,
+     0
+    ]
+   },
+   "properties": {
+    "id": "C01508",
+    "name": "vt4_Mäntsälä",
+    "collectionStatus": "GATHERING",
+    "dataUpdatedTime": "2026-11-14T03:25:54Z",
+    "presets": [
+     {
+      "id": "C0150801",
+      "inCollection": true
+     },
+     {
+      "id": "C0150802",
+      "inCollection": true
+     },
+     {
+      "id": "C0150803",
+      "inCollection": true
+     },
+     {
+      "id": "C0150804",
+      "inCollection": true
+     },
+     {
+      "id": "C0150809",
+      "inCollection": true
+     },
+     {
+      "id": "C0150811",
+      "inCollection": true
+     }
+    ],
+    "state": null
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "C03525",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     28.856199,
+     61.229996,
+     0
+    ]
+   },
+   "properties": {
+    "id": "C03525",
+    "name": "vt6_Imatra_Rönkkä",
+    "collectionStatus": "GATHERING",
+    "dataUpdatedTime": "2026-11-14T03:27:03Z",
+    "presets": [
+     {
+      "id": "C0352501",
+      "inCollection": true
+     },
+     {
+      "id": "C0352502",
+      "inCollection": true
+     },
+     {
+      "id": "C0352509",
+      "inCollection": true
+     }
+    ],
+    "state": null
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "C01513",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     24.948435,
+     60.244449,
+     0
+    ]
+   },
+   "properties": {
+    "id": "C01513",
+    "name": "st101_Helsinki_Pakila",
+    "collectionStatus": "GATHERING",
+    "dataUpdatedTime": "2026-11-14T03:26:18Z",
+    "presets": [
+     {
+      "id": "C0151301",
+      "inCollection": true
+     },
+     {
+      "id": "C0151302",
+      "inCollection": true
+     },
+     {
+      "id": "C0151303",
+      "inCollection": true
+     },
+     {
+      "id": "C0151309",
+      "inCollection": true
+     }
+    ],
+    "state": null
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "C01535",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     24.899751,
+     60.235281,
+     0
+    ]
+   },
+   "properties": {
+    "id": "C01535",
+    "name": "st101_Helsinki_Pirkkola",
+    "collectionStatus": "GATHERING",
+    "dataUpdatedTime": "2026-11-14T03:27:33Z",
+    "presets": [
+     {
+      "id": "C0153501",
+      "inCollection": true
+     },
+     {
+      "id": "C0153502",
+      "inCollection": true
+     },
+     {
+      "id": "C0153503",
+      "inCollection": true
+     },
+     {
+      "id": "C0153504",
+      "inCollection": true
+     },
+     {
+      "id": "C0153509",
+      "inCollection": true
+     }
+    ],
+    "state": null
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "C01587",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     24.898843,
+     60.207997,
+     0
+    ]
+   },
+   "properties": {
+    "id": "C01587",
+    "name": "st100_Kivihaka_Masto",
+    "collectionStatus": "GATHERING",
+    "dataUpdatedTime": "2026-11-14T03:25:40Z",
+    "presets": [
+     {
+      "id": "C0158700",
+      "inCollection": true
+     }
+    ],
+    "state": null
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "C01590",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     24.907594,
+     60.208315,
+     0
+    ]
+   },
+   "properties": {
+    "id": "C01590",
+    "name": "st100_Kivihaka_Ilmala",
+    "collectionStatus": "GATHERING",
+    "dataUpdatedTime": "2026-11-14T03:27:32Z",
+    "presets": [
+     {
+      "id": "C0159000",
+      "inCollection": true
+     }
+    ],
+    "state": null
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "C01616",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     24.825366,
+     60.226852,
+     0
+    ]
+   },
+   "properties": {
+    "id": "C01616",
+    "name": "st101_Vallikallio",
+    "collectionStatus": "GATHERING",
+    "dataUpdatedTime": "2026-11-14T03:26:16Z",
+    "presets": [
+     {
+      "id": "C0161600",
+      "inCollection": true
+     }
+    ],
+    "state": null
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "C01617",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     24.825081,
+     60.227071,
+     0
+    ]
+   },
+   "properties": {
+    "id": "C01617",
+    "name": "st101_Ramppi_Itä",
+    "collectionStatus": "GATHERING",
+    "dataUpdatedTime": "2026-11-14T03:25:39Z",
+    "presets": [
+     {
+      "id": "C0161700",
+      "inCollection": true
+     }
+    ],
+    "state": null
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "C01618",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     24.827347,
+     60.228303,
+     0
+    ]
+   },
+   "properties": {
+    "id": "C01618",
+    "name": "st101_Lintuvaara",
+    "collectionStatus": "GATHERING",
+    "dataUpdatedTime": "2026-11-14T03:27:25Z",
+    "presets": [
+     {
+      "id": "C0161800",
+      "inCollection": true
+     }
+    ],
+    "state": null
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "C01619",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     24.827796,
+     60.228607,
+     0
+    ]
+   },
+   "properties": {
+    "id": "C01619",
+    "name": "st101_Mäkkylä",
+    "collectionStatus": "GATHERING",
+    "dataUpdatedTime": "2026-11-14T03:26:55Z",
+    "presets": [
+     {
+      "id": "C0161900",
+      "inCollection": true
+     }
+    ],
+    "state": null
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "C14533",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     27.941064,
+     70.088512,
+     0
+    ]
+   },
+   "properties": {
+    "id": "C14533",
+    "name": "st970_Utsjoki_Nuorgam",
+    "collectionStatus": "GATHERING",
+    "dataUpdatedTime": "2026-11-14T03:27:06Z",
+    "presets": [
+     {
+      "id": "C1453301",
+      "inCollection": true
+     },
+     {
+      "id": "C1453302",
+      "inCollection": true
+     },
+     {
+      "id": "C1453308",
+      "inCollection": true
+     },
+     {
+      "id": "C1453309",
+      "inCollection": true
+     }
+    ],
+    "state": null
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "C14594",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     26.230451,
+     69.785258,
+     0
+    ]
+   },
+   "properties": {
+    "id": "C14594",
+    "name": "st970_Utsjoki_Nuvvus",
+    "collectionStatus": "GATHERING",
+    "dataUpdatedTime": "2026-11-14T03:27:38Z",
+    "presets": [
+     {
+      "id": "C1459401",
+      "inCollection": true
+     },
+     {
+      "id": "C1459402",
+      "inCollection": true
+     },
+     {
+      "id": "C1459407",
+      "inCollection": true
+     },
+     {
+      "id": "C1459408",
+      "inCollection": true
+     },
+     {
+      "id": "C1459409",
+      "inCollection": true
+     }
+    ],
+    "state": null
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "C14516",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     29.100175,
+     69.66367,
+     0
+    ]
+   },
+   "properties": {
+    "id": "C14516",
+    "name": "kt92_Inari_Näätämö",
+    "collectionStatus": "GATHERING",
+    "dataUpdatedTime": "2026-11-14T03:26:53Z",
+    "presets": [
+     {
+      "id": "C1451601",
+      "inCollection": true
+     },
+     {
+      "id": "C1451602",
+      "inCollection": true
+     },
+     {
+      "id": "C1451607",
+      "inCollection": true
+     },
+     {
+      "id": "C1451609",
+      "inCollection": true
+     }
+    ],
+    "state": null
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "C01539",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     25.170316,
+     60.224998,
+     0
+    ]
+   },
+   "properties": {
+    "id": "C01539",
+    "name": "VUO_SAT",
+    "collectionStatus": "REMOVED_TEMPORARILY",
+    "dataUpdatedTime": "2026-11-14T03:26:36Z",
+    "presets": [
+     {
+      "id": "C0153900",
+      "inCollection": true
+     }
+    ],
+    "state": null
+   }
+  }
+ ]
+}

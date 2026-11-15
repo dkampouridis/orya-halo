@@ -1,0 +1,74 @@
+name: New data source
+description: Propose a public live feed for the globe.
+labels: ["data source"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Orya Halo only uses sources whose terms allow public display. Please read
+        "The rule for data sources" in CONTRIBUTING.md first, and link the provider's
+        own pages below, not a third party's summary.
+  - type: input
+    id: name
+    attributes:
+      label: Provider and feed
+      placeholder: Example Seismic Network, events of the last day
+    validations:
+      required: true
+  - type: input
+    id: layer
+    attributes:
+      label: Layer
+      description: Which layer it would feed (for example Ships or Webcams), or the new layer it needs.
+    validations:
+      required: true
+  - type: textarea
+    id: coverage
+    attributes:
+      label: What it adds
+      description: Coverage, how fresh the data is, and what the current sources miss that this one has.
+    validations:
+      required: true
+  - type: input
+    id: docs
+    attributes:
+      label: API documentation
+      placeholder: https://...
+    validations:
+      required: true
+  - type: input
+    id: terms
+    attributes:
+      label: Licence or terms of use
+      description: Link to the licence or terms text itself.
+      placeholder: https://...
+    validations:
+      required: true
+  - type: checkboxes
+    id: allows
+    attributes:
+      label: What the terms allow
+      description: Tick only what the terms say plainly.
+      options:
+        - label: Showing the data to the public on a website
+        - label: Passing the data on to third parties (needed if it goes through the gateway)
+        - label: Use without payment for a non-commercial project
+  - type: textarea
+    id: attribution
+    attributes:
+      label: Required attribution
+      description: The credit text the provider asks for, word for word, and where it has to appear (on the map, next to the data, on an about page).
+    validations:
+      required: true
+  - type: textarea
+    id: limits
+    attributes:
+      label: Rate limits, keys and CORS
+      description: Published request limits; whether a key is needed and whether its terms allow it in a browser; whether the API sends CORS headers.
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else
+      description: For webcams, who publishes them. Only cameras that an organisation officially publishes for the public are accepted.

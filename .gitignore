@@ -1,0 +1,33 @@
+node_modules
+dist
+dist-ssr
+*.local
+.turbo
+*.log
+
+# Environment: never commit keys. Copy .env.example to .env.
+.env
+.env.*
+!.env.example
+
+# Rust
+apps/gateway/target
+
+# Large generated assets (fetched by scripts, see README)
+apps/web/public/tiles/*.pmtiles
+
+# Test output
+test-results
+playwright-report
+.screenshots
+
+# Editors and OS
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+Thumbs.db
+
+# Agent worktrees and install mutex
+.claude/worktrees/
+.install.lock

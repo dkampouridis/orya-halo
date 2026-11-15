@@ -1,0 +1,17 @@
+{
+  "photos": [
+    {
+      "id": "0000001",
+      "thumbnail": {
+        "src": "https://t.plnspttrs.net/00000/0000001_0123456789_t.jpg",
+        "size": { "width": 200, "height": 113 }
+      },
+      "thumbnail_large": {
+        "src": "https://t.plnspttrs.net/00000/0000001_0123456789_280.jpg",
+        "size": { "width": 498, "height": 280 }
+      },
+      "link": "https://www.planespotters.net/photo/0000001/d-test-example-airline-airbus-a380?utm_source=api",
+      "photographer": "Example Photographer"
+    }
+  ]
+}

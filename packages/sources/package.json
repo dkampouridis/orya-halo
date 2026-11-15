@@ -1,0 +1,25 @@
+{
+  "name": "@orya-halo/sources",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Data source plugins for Orya Halo: one per live public feed.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "test": "vp test run",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@orya-halo/schema": "workspace:*",
+    "satellite.js": "^7.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vite-plus": "catalog:"
+  }
+}

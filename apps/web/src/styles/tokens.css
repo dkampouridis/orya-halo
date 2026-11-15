@@ -1,0 +1,79 @@
+/*
+ * Design tokens, as specified in docs/DESIGN.md. Layer accents are not here: they are
+ * defined once in packages/schema/src/kinds.ts and written to :root as --accent-<layer>
+ * when the HUD module loads (src/ui/accents.ts).
+ */
+:root {
+  --void: #000000;
+  --glass: rgb(9 14 22 / 0.58);
+  --glass-solid: #0a0f17;
+  --line: rgb(170 205 255 / 0.14);
+  --line-strong: rgb(170 205 255 / 0.28);
+  --wash: rgb(170 205 255 / 0.07);
+  --ink: #e9eff6;
+  --ink-dim: #9aa8ba;
+  --ink-faint: #6f7c8e;
+  --halo: #bcd9ff;
+  --warn: #ffcf6b;
+
+  --sans: "Archivo Variable", "Archivo", system-ui, sans-serif;
+  --mono: "Martian Mono Variable", "Martian Mono", ui-monospace, monospace;
+
+  --margin: 16px;
+  /* Top of dock and panel: margin + 40px top row + 16px. */
+  --top: 72px;
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  /* Text set straight on space can end up over city lights: a tight black bloom keeps it legible. */
+  --on-space: 0 0 2px #000, 0 0 12px rgb(0 0 0 / 0.85);
+  /* Height the phone sheet shows at its peek stop. */
+  --peek: 132px;
+  /* Where the bottom row of glass stands. */
+  --bottom: var(--margin);
+}
+
+@media (max-width: 720px) {
+  :root {
+    --margin: 12px;
+  }
+}
+
+/* The same tokens as Tailwind theme values, so utilities such as text-ink or bg-glass exist. */
+@theme inline {
+  --color-void: var(--void);
+  --color-glass: var(--glass);
+  --color-glass-solid: var(--glass-solid);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-wash: var(--wash);
+  --color-ink: var(--ink);
+  --color-ink-dim: var(--ink-dim);
+  --color-ink-faint: var(--ink-faint);
+  --color-halo: var(--halo);
+  --color-warn: var(--warn);
+  --font-sans: var(--sans);
+  --font-mono: var(--mono);
+  --ease-halo: var(--ease);
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  overflow: hidden;
+  background: var(--void);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 13px;
+  line-height: 19px;
+  font-weight: 400;
+  /* Width is set apart from the `font` shorthand everywhere: the shorthand resets it. */
+  font-stretch: 100%;
+  font-synthesis: none;
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+  overscroll-behavior: none;
+}

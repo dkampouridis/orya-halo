@@ -1,0 +1,34 @@
+# Render blueprint for the gateway (the web app is a static site; see docs/DEPLOYMENT.md).
+# On Render: New > Blueprint > this repository. Render asks for the values marked
+# `sync: false` when the blueprint is first applied; they are never stored here.
+#
+# The free plan sleeps after 15 minutes without visitors and wakes in about a
+# minute; its disk is wiped each time. That is why ADSBLOL_FIRST_BURST is off:
+# every start begins with an empty adsb.lol budget, so restarts can never add
+# up to more than the 500 requests a day the keyless API allows.
+services:
+  - type: web
+    name: orya-halo-gateway
+    runtime: docker
+    plan: free
+    region: frankfurt
+    rootDir: apps/gateway
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      # Render routes requests through Cloudflare, which sets True-Client-IP.
+      - key: TRUST_PROXY
+        value: "true"
+      - key: CLIENT_IP_HEADER
+        value: true-client-ip
+      - key: ADSBLOL_FIRST_BURST
+        value: "false"
+      - key: ALLOWED_ORIGINS
+        value: https://orya-halo.vercel.app
+      - key: LOG_FORMAT
+        value: json
+      - key: FIRMS_MAP_KEY
+        sync: false
+      - key: AISSTREAM_API_KEY
+        sync: false

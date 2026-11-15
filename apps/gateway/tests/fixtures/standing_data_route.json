@@ -1,0 +1,31 @@
+{
+    "callsign": "BAW834",
+    "number": "834",
+    "airline_code": "BAW",
+    "airport_codes": "EGLL-EIDW",
+    "_airport_codes_iata": "LHR-DUB",
+    "_airports": [
+        {
+            "name": "London Heathrow Airport",
+            "icao": "EGLL",
+            "iata": "LHR",
+            "location": "London",
+            "countryiso2": "GB",
+            "lat": 51.4706,
+            "lon": -0.461941,
+            "alt_feet": 83.0,
+            "alt_meters": 25.3
+        },
+        {
+            "name": "Dublin Airport",
+            "icao": "EIDW",
+            "iata": "DUB",
+            "location": "Dublin",
+            "countryiso2": "IE",
+            "lat": 53.421299,
+            "lon": -6.27007,
+            "alt_feet": 242.0,
+            "alt_meters": 73.76
+        }
+    ]
+}

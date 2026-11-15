@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <title>Orya Halo icons and marks</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Martian+Mono:wdth,wght@75..112.5,100..800&display=block"
+    />
+    <style>
+      :root {
+        --ink: #e9eff6;
+        --ink-dim: #9aa8ba;
+        --line: rgb(170 205 255 / 0.14);
+      }
+      body {
+        margin: 0;
+        padding: 48px;
+        background: #000;
+        color: var(--ink);
+        font:
+          400 13px/19px "Archivo",
+          system-ui,
+          sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      h1 {
+        margin: 0 0 4px;
+        font-size: 22px;
+        line-height: 26px;
+        font-weight: 300;
+        font-stretch: 118%;
+      }
+      h2 {
+        margin: 40px 0 12px;
+        font-size: 15px;
+        line-height: 20px;
+        font-weight: 500;
+      }
+      p {
+        max-width: 60ch;
+        margin: 0;
+        color: var(--ink-dim);
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, 112px);
+        gap: 8px;
+      }
+      .cell {
+        display: grid;
+        grid-template-columns: 16px 1fr;
+        grid-template-rows: 48px auto;
+        align-items: center;
+        gap: 0 16px;
+        padding: 12px 12px 10px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+      }
+      .cell svg {
+        display: block;
+      }
+      .cell .big svg {
+        width: 48px;
+        height: 48px;
+      }
+      .cell span {
+        grid-column: 1 / -1;
+        font-size: 11px;
+        line-height: 14px;
+        font-weight: 500;
+        font-stretch: 82%;
+        color: var(--ink-dim);
+      }
+      svg .f {
+        fill: currentColor;
+        stroke: none;
+      }
+      .marks {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 32px;
+      }
+      .tile {
+        display: grid;
+        place-items: center;
+        border-radius: 6px;
+      }
+      .light {
+        background: #e9eff6;
+      }
+      .rings {
+        display: flex;
+        align-items: center;
+        gap: 40px;
+      }
+      .rings svg {
+        overflow: visible;
+      }
+      .rings figure {
+        display: grid;
+        justify-items: center;
+        gap: 10px;
+        margin: 0;
+        font-size: 11px;
+        line-height: 14px;
+        font-weight: 500;
+        font-stretch: 82%;
+        color: var(--ink-dim);
+      }
+      .spin {
+        transform-origin: center;
+        transform-box: fill-box;
+        animation: spin 900ms linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .spin {
+          animation-duration: 1800ms;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Icons and marks</h1>
+    <p>
+      One family: 16px box, 1.25px stroke, butt caps and mitre joins, currentColor. Every circle is
+      the halo. Layer icons are the shapes the layer draws on the globe. Each is shown at 16px and
+      at 48px.
+    </p>
+
+    <h2>Wordmark and favicon</h2>
+    <div class="marks">
+      <img src="wordmark.svg" alt="orya halo" width="143" height="32" />
+      <img src="wordmark.svg" alt="" width="286" height="64" />
+      <div class="tile" style="width: 40px; height: 40px">
+        <img src="favicon.svg" alt="" width="16" height="16" />
+      </div>
+      <div class="tile" style="width: 56px; height: 56px">
+        <img src="favicon.svg" alt="" width="32" height="32" />
+      </div>
+      <div class="tile light" style="width: 40px; height: 40px">
+        <img src="favicon.svg" alt="" width="16" height="16" />
+      </div>
+      <div class="tile light" style="width: 56px; height: 56px">
+        <img src="favicon.svg" alt="" width="32" height="32" />
+      </div>
+      <img src="favicon.svg" alt="" width="96" height="96" />
+    </div>
+
+    <h2>The halo</h2>
+    <div class="rings">
+      <figure>
+        <svg width="28" height="28" viewBox="-14.7 -14.7 29.4 29.4">
+          <g transform="rotate(-70)">
+            <path
+              d="M12.36 6.57A14 14 0 1 1 12.36-6.57"
+              fill="none"
+              stroke="#bcd9ff"
+              stroke-width="1.25"
+            />
+          </g>
+        </svg>
+        Selected, 28px
+      </figure>
+      <figure>
+        <svg width="18" height="18" viewBox="-9.7 -9.7 19.4 19.4">
+          <g transform="rotate(-70)">
+            <path
+              d="M7.95 4.23A9 9 0 1 1 7.95-4.23"
+              fill="none"
+              stroke="#bcd9ff"
+              stroke-opacity="0.5"
+              stroke-width="1.25"
+            />
+          </g>
+        </svg>
+        Hover, 18px at 50%
+      </figure>
+      <figure>
+        <svg width="14" height="14" viewBox="-7.7 -7.7 15.4 15.4">
+          <path
+            class="spin"
+            d="M6.18 3.29A7 7 0 1 1 6.18-3.29"
+            fill="none"
+            stroke="#bcd9ff"
+            stroke-width="1.25"
+          />
+        </svg>
+        Loading, 14px
+      </figure>
+      <figure>
+        <svg width="28" height="28" viewBox="-14.7 -14.7 29.4 29.4">
+          <circle r="14" fill="none" stroke="#bcd9ff" stroke-width="1.25" />
+        </svg>
+        No heading (quake, webcam)
+      </figure>
+    </div>
+
+    <h2>Layers</h2>
+    <div class="grid" id="layers"></div>
+    <h2>Utility</h2>
+    <div class="grid" id="utility"></div>
+    <h2>Map glyphs (reference, pointing north)</h2>
+    <div class="grid" id="glyphs"></div>
+
+    <script src="icons.js"></script>
+    <script>
+      const layers = [
+        "aircraft",
+        "ships",
+        "satellites",
+        "quakes",
+        "cables",
+        "radar",
+        "imagery",
+        "fires",
+        "webcams",
+        "nightlights",
+      ];
+      const cell = (name, svg) =>
+        `<div class="cell"><div>${svg}</div><div class="big">${svg}</div><span>${name}</span></div>`;
+      const { ICONS, GLYPHS, inline, glyphFile } = window.HaloIcons;
+      document.getElementById("layers").innerHTML = layers.map((n) => cell(n, inline(n))).join("");
+      document.getElementById("utility").innerHTML = Object.keys(ICONS)
+        .filter((n) => !layers.includes(n))
+        .map((n) => cell(n, inline(n)))
+        .join("");
+      document.getElementById("glyphs").innerHTML = Object.keys(GLYPHS)
+        .map((n) => cell(`glyph-${n}`, glyphFile(n)))
+        .join("");
+    </script>
+  </body>
+</html>
