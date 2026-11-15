@@ -1,0 +1,43 @@
+{
+  "about": "Every AIS ship-and-cargo type code (ITU-R M.1371-5, Table 53) with the category and type name the gateway sends for it, and the 3D model the web app should draw for a ship that told us nothing else. Read by apps/gateway/tests/ais_ship_types.rs and packages/schema/tests/vessels-edge.test.ts, so the two sides cannot drift apart. Codes not listed (0-19, 38, 39, 56, 57, 59 and 100 and above) have no type name. Categories are ShipCategory / ship_category numbers; models are VesselModel names.",
+  "types": [
+    { "from": 20, "to": 29, "typeName": "Wing in ground craft", "category": 9, "model": "Generic" },
+    { "from": 30, "to": 30, "typeName": "Fishing vessel", "category": 4, "model": "Fishing" },
+    { "from": 31, "to": 32, "typeName": "Towing vessel", "category": 5, "model": "Tug" },
+    {
+      "from": 33,
+      "to": 33,
+      "typeName": "Dredger or underwater operations",
+      "category": 5,
+      "model": "Generic"
+    },
+    { "from": 34, "to": 34, "typeName": "Diving vessel", "category": 5, "model": "Generic" },
+    { "from": 35, "to": 35, "typeName": "Military", "category": 8, "model": "Patrol" },
+    { "from": 36, "to": 36, "typeName": "Sailing vessel", "category": 7, "model": "SailingYacht" },
+    { "from": 37, "to": 37, "typeName": "Pleasure craft", "category": 7, "model": "MotorYacht" },
+    { "from": 40, "to": 49, "typeName": "High-speed craft", "category": 6, "model": "PilotBoat" },
+    { "from": 50, "to": 50, "typeName": "Pilot vessel", "category": 5, "model": "PilotBoat" },
+    {
+      "from": 51,
+      "to": 51,
+      "typeName": "Search and rescue vessel",
+      "category": 5,
+      "model": "Patrol"
+    },
+    { "from": 52, "to": 52, "typeName": "Tug", "category": 5, "model": "Tug" },
+    { "from": 53, "to": 53, "typeName": "Port tender", "category": 5, "model": "PilotBoat" },
+    {
+      "from": 54,
+      "to": 54,
+      "typeName": "Anti-pollution vessel",
+      "category": 5,
+      "model": "Generic"
+    },
+    { "from": 55, "to": 55, "typeName": "Law enforcement", "category": 5, "model": "Patrol" },
+    { "from": 58, "to": 58, "typeName": "Medical transport", "category": 5, "model": "Generic" },
+    { "from": 60, "to": 69, "typeName": "Passenger ship", "category": 3, "model": "Ferry" },
+    { "from": 70, "to": 79, "typeName": "Cargo ship", "category": 1, "model": "GeneralCargo" },
+    { "from": 80, "to": 89, "typeName": "Tanker", "category": 2, "model": "Tanker" },
+    { "from": 90, "to": 99, "typeName": "Other type", "category": 9, "model": "Generic" }
+  ]
+}
