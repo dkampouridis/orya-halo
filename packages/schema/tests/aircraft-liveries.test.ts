@@ -63,6 +63,11 @@ describe("airline colour schemes", () => {
     expect(nameFor("BAW117")).toBe("British Airways");
     expect(nameFor("AEE602")).toBe("Aegean Airlines");
     expect(nameFor("DLH400")).toBe("Lufthansa");
+    expect(nameFor("UAE34E")).toBe("Emirates");
+    expect(nameFor("PGT81UD")).toBe("Pegasus");
+    expect(nameFor("TKJ1569")).toBe("AJet");
+    // A regional flown in its parent airline's colours.
+    expect(nameFor("ENY3456")).toBe("American Airlines");
     expect(nameFor("ZZZ123")).toBe("Neutral");
     expect(nameFor("GATYS")).toBe("Neutral");
     expect(aircraftLivery(9999)).toBe(NEUTRAL_LIVERY);

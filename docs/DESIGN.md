@@ -82,7 +82,7 @@ are generated from published dimensions (`packages/schema/src/aircraft-types.ts`
 span, fuselage, wing sweep and chord, engines, tail layout; about 300 ICAO type codes over 35
 models, with a stand-in by ADS-B category when the type is not known), so an A380 is an A380
 and a Cessna a Cessna. Each is painted in its airline's colour scheme, picked by the callsign's
-ICAO prefix (`packages/schema/src/aircraft-liveries.ts`: about 30 airlines): top and belly
+ICAO prefix (`packages/schema/src/aircraft-liveries.ts`: about 80 airlines): top and belly
 colours, the fin with an optional second colour, engines, plus cabin windows and flight-deck
 glass drawn in the shader. No logos, names or artwork, only flat colours; aircraft with no
 known airline stay the app's light grey. They bank in turns and pitch on

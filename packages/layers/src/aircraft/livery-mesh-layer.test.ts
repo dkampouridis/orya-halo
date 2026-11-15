@@ -36,6 +36,21 @@ describe("liveryPaletteData", () => {
     expect(texel(data, 0, 4)).toEqual([0, 0, 255, 255]);
   });
 
+  it("codes an accent on the fin's leading part as 4", () => {
+    const data = liveryPaletteData([
+      {
+        id: 0,
+        name: "Flag",
+        codes: [],
+        top: "#ffffff",
+        tail: "#00843d",
+        accent: { color: "#d71921", on: "front", split: 0.3 },
+      },
+    ]);
+    expect(texel(data, 0, 1)[3]).toBe(4);
+    expect(texel(data, 0, 2)).toEqual([0, 132, 61, 77]);
+  });
+
   it("puts a scheme without a belly colour's line below the keel", () => {
     const data = liveryPaletteData([
       { id: 0, name: "Plain", codes: [], top: "#808080", tail: "#808080" },

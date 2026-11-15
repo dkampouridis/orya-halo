@@ -22,7 +22,9 @@ export type LiveryAccent =
   /** The fin's lower part, below `split` of its height. */
   | "bottom"
   /** The fin's trailing part, behind `split` of its chord. */
-  | "rear";
+  | "rear"
+  /** The fin's leading part, ahead of `split` of its chord. */
+  | "front";
 
 export interface AircraftLivery {
   readonly id: number;
@@ -78,7 +80,7 @@ const SCHEMES: readonly Omit<AircraftLivery, "id">[] = [
     accent: { color: "#2b2a72", on: "bottom", split: 0.35 },
   }),
   L("Lufthansa", ["DLH", "CLH", "LHX"], { top: WHITE, tail: "#05164d", engines: "#05164d" }),
-  L("Air France", ["AFR"], {
+  L("Air France", ["AFR", "HOP"], {
     top: WHITE,
     tail: WHITE,
     accent: { color: "#002157", on: "rear", split: 0.55 },
@@ -104,14 +106,14 @@ const SCHEMES: readonly Omit<AircraftLivery, "id">[] = [
     tail: "#00205b",
     engines: "#00205b",
   }),
-  L("Delta Air Lines", ["DAL"], {
+  L("Delta Air Lines", ["DAL", "EDV"], {
     top: WHITE,
     belly: "#003366",
     bellyLine: -0.35,
     tail: "#c8102e",
     accent: { color: "#003366", on: "bottom", split: 0.3 },
   }),
-  L("American Airlines", ["AAL"], {
+  L("American Airlines", ["AAL", "ENY", "PDT", "JIA"], {
     top: "#c5cbd1",
     tail: "#0078d2",
     accent: { color: "#c30019", on: "rear", split: 0.5 },
@@ -127,7 +129,7 @@ const SCHEMES: readonly Omit<AircraftLivery, "id">[] = [
   L("Aegean Airlines", ["AEE"], { top: WHITE, tail: "#1f3c88", engines: "#1f3c88" }),
   L("Swiss", ["SWR"], { top: WHITE, tail: "#e30613" }),
   L("Austrian Airlines", ["AUA"], { top: WHITE, tail: "#d81e05" }),
-  L("Iberia", ["IBE", "IBS"], {
+  L("Iberia", ["IBE", "IBS", "ANE"], {
     top: WHITE,
     tail: "#d7192d",
     accent: { color: "#fcb913", on: "bottom", split: 0.35 },
@@ -169,6 +171,103 @@ const SCHEMES: readonly Omit<AircraftLivery, "id">[] = [
     tail: "#4d148c",
   }),
   L("Norwegian", ["NAX", "NOZ", "NSZ"], { top: WHITE, tail: "#d81939" }),
+  // Gulf and Middle East.
+  L("Emirates", ["UAE"], {
+    top: WHITE,
+    tail: "#00843d",
+    accent: { color: "#d71921", on: "front", split: 0.3 },
+  }),
+  L("Etihad Airways", ["ETD"], { top: "#ece6dc", tail: "#a8875b", engines: "#ece6dc" }),
+  L("flydubai", ["FDB"], {
+    top: WHITE,
+    belly: "#1a3a8f",
+    bellyLine: -0.2,
+    tail: "#1a3a8f",
+    accent: { color: "#f58220", on: "rear", split: 0.6 },
+  }),
+  L("Air Arabia", ["ABY", "ADY", "MAC", "RBG"], { top: WHITE, tail: "#e2231a" }),
+  L("Oman Air", ["OMA"], { top: WHITE, tail: "#006e6e" }),
+  L("Gulf Air", ["GFA"], { top: WHITE, tail: "#a6192e" }),
+  L("Royal Jordanian", ["RJA"], { top: "#d9d9db", tail: "#2b2b2b" }),
+  L("El Al", ["ELY"], { top: WHITE, tail: "#0b2a5a" }),
+  L("Saudia", ["SVA"], { top: WHITE, belly: "#c7b99a", bellyLine: -0.3, tail: "#0d4a8b" }),
+  // Turkey, Caucasus and Central Asia.
+  L("Pegasus", ["PGT"], {
+    top: WHITE,
+    tail: "#fdb913",
+    accent: { color: "#e30613", on: "bottom", split: 0.4 },
+    engines: "#fdb913",
+  }),
+  L("AJet", ["TKJ"], { top: WHITE, tail: "#0b2d63", engines: "#0b2d63" }),
+  L("SunExpress", ["SXS"], { top: WHITE, tail: "#f7a600" }),
+  L("Azerbaijan Airlines", ["AHY"], { top: WHITE, tail: "#0098c3" }),
+  L("Aeroflot", ["AFL"], {
+    top: WHITE,
+    tail: "#0039a6",
+    accent: { color: "#d52b1e", on: "bottom", split: 0.33 },
+  }),
+  // Africa.
+  L("EgyptAir", ["MSR"], { top: WHITE, tail: "#1c3768" }),
+  L("Air Algérie", ["DAH"], { top: WHITE, tail: "#c8102e" }),
+  L("Tunisair", ["TAR"], { top: WHITE, tail: "#e2001a" }),
+  L("Royal Air Maroc", ["RAM"], { top: WHITE, tail: "#c8102e" }),
+  L("Ethiopian Airlines", ["ETH"], {
+    top: WHITE,
+    tail: "#007a3d",
+    accent: { color: "#da121a", on: "rear", split: 0.66 },
+  }),
+  // Europe.
+  L("ITA Airways", ["ITY"], {
+    top: "#0a4da2",
+    tail: "#0a4da2",
+    accent: { color: "#008c45", on: "bottom", split: 0.15 },
+    engines: "#0a4da2",
+  }),
+  L("Vueling", ["VLG"], { top: WHITE, tail: "#4c4c4c", engines: "#ffcc00" }),
+  L("Eurowings", ["EWG"], { top: WHITE, tail: "#9e1a5b" }),
+  L("Air Europa", ["AEA"], { top: WHITE, tail: "#00326e", engines: "#00326e" }),
+  L("Aer Lingus", ["EIN", "EAI"], { top: WHITE, tail: "#00747a" }),
+  L("TAP Air Portugal", ["TAP"], {
+    top: WHITE,
+    tail: "#e30613",
+    accent: { color: "#00a651", on: "bottom", split: 0.4 },
+  }),
+  L("Brussels Airlines", ["BEL"], { top: WHITE, tail: "#d31045" }),
+  L("Edelweiss", ["EDW"], { top: WHITE, tail: "#e2001a" }),
+  L("airBaltic", ["BTI"], { top: WHITE, tail: "#c4d600", engines: "#c4d600" }),
+  L("Luxair", ["LGL"], { top: WHITE, tail: "#00a3e0" }),
+  L("Croatia Airlines", ["CTN"], { top: WHITE, tail: "#003f87" }),
+  L("TAROM", ["ROT"], { top: WHITE, tail: "#002e6d" }),
+  L("Icelandair", ["ICE"], { top: WHITE, tail: "#003a7d" }),
+  L("Sky Express", ["SEH"], { top: WHITE, tail: "#2a2c6b" }),
+  L("KM Malta Airlines", ["KMM"], { top: WHITE, tail: "#cf142b" }),
+  L("DHL", ["DHK", "BCS", "DAE", "DHX"], {
+    top: "#ffcc00",
+    tail: "#ffcc00",
+    accent: { color: "#d40511", on: "bottom", split: 0.3 },
+    engines: "#ffcc00",
+  }),
+  L("VistaJet", ["VJT"], { top: WHITE, tail: "#d6001c" }),
+  // Asia and Oceania.
+  L("Air India", ["AIC"], {
+    top: WHITE,
+    tail: "#c8102e",
+    accent: { color: "#5b2c6f", on: "bottom", split: 0.35 },
+  }),
+  L("China Southern", ["CSN"], { top: WHITE, tail: "#0f5aa8" }),
+  L("ANA", ["ANA"], { top: WHITE, tail: "#13448f" }),
+  L("Thai Airways", ["THA"], { top: WHITE, tail: "#5c2483" }),
+  L("Garuda Indonesia", ["GIA"], { top: WHITE, tail: "#0094a8" }),
+  L("Air New Zealand", ["ANZ"], { top: WHITE, tail: "#111111", engines: "#111111" }),
+  // The Americas.
+  L("Avianca", ["AVA"], { top: "#da291c", tail: "#da291c" }),
+  L("LATAM", ["LAN", "TAM", "LPE"], {
+    top: WHITE,
+    tail: "#1b0088",
+    accent: { color: "#e8114b", on: "rear", split: 0.6 },
+  }),
+  L("Aeroméxico", ["AMX"], { top: WHITE, tail: "#0b2343" }),
+  L("Volaris", ["VOI"], { top: WHITE, tail: "#5f259f" }),
 ];
 
 /** Every scheme, id = place in the list; id 0 is `NEUTRAL_LIVERY`. */

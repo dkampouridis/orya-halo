@@ -20,7 +20,7 @@ import type { AircraftLivery } from "@orya-halo/schema";
 /** Texels per scheme in the palette, see `liveryPaletteData`. */
 export const PALETTE_WIDTH = 8;
 
-const ACCENT_CODE = { top: 1, bottom: 2, rear: 3 } as const;
+const ACCENT_CODE = { top: 1, bottom: 2, rear: 3, front: 4 } as const;
 
 function rgb(hex: string): [number, number, number] {
   const n = Number.parseInt(hex.slice(1), 16);
@@ -30,7 +30,7 @@ function rgb(hex: string): [number, number, number] {
 /**
  * The palette's pixels, RGBA, `PALETTE_WIDTH` texels per scheme:
  * 0 top colour, belly line ((sine + 1) / 2) in alpha;
- * 1 belly colour, accent kind (0 none, 1 top, 2 bottom, 3 rear) in alpha;
+ * 1 belly colour, accent kind (0 none, 1 top, 2 bottom, 3 rear, 4 front) in alpha;
  * 2 fin colour, accent split in alpha; 3 accent colour; 4 engines.
  */
 export function liveryPaletteData(liveries: readonly AircraftLivery[]): Uint8Array {
@@ -180,7 +180,8 @@ vec3 fin() {
   float accent = 0.0;
   if (kind > 0.5 && kind < 1.5) accent = above(height, split);
   else if (kind > 1.5 && kind < 2.5) accent = 1.0 - above(height, split);
-  else if (kind > 2.5) accent = above(chord, split);
+  else if (kind > 2.5 && kind < 3.5) accent = above(chord, split);
+  else if (kind > 3.5) accent = 1.0 - above(chord, split);
   return mix(tail, palette(3).rgb, accent);
 }
 
