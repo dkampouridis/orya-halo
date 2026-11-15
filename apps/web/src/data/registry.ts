@@ -16,10 +16,13 @@ import type { DataConfig, SearchResult, SourcePlugin } from "@orya-halo/schema";
 import {
   CELESTRAK_GP_URL,
   SourceError,
+  austinTrafficCameras,
+  calgaryTrafficCameras,
   createCelestrakSource,
   createFirmsSource,
   createPlaceIndex,
   digitrafficWeathercams,
+  driveBcHighwayCams,
   gatewayAircraft,
   gatewayShips,
   gibsImergPrecipitation,
@@ -28,6 +31,7 @@ import {
   isSourceError,
   osmCables,
   rainViewerRadar,
+  sgLtaTrafficCameras,
   usgsQuakes,
 } from "@orya-halo/sources";
 
@@ -175,9 +179,13 @@ export function createSources(config: DataConfig): SourcePlugin[] {
     config.radarSource === "imerg" ? gibsImergPrecipitation : rainViewerRadar,
     gibsTrueColour,
     wildfires(config),
-    // The two keyless, openly licensed camera feeds.
+    // Keyless, openly licensed camera feeds, each published by the road authority that runs the cameras.
     digitrafficWeathercams,
     hkTrafficCameras,
+    sgLtaTrafficCameras,
+    driveBcHighwayCams,
+    calgaryTrafficCameras,
+    austinTrafficCameras,
   ] as SourcePlugin[];
 }
 

@@ -44,19 +44,19 @@ Every source was checked for terms that allow public display. The full table, wi
 rate limits and the exact credit each provider asks for, is in
 [docs/DATA_LICENCES.md](docs/DATA_LICENCES.md).
 
-| Layer             | Source                                                                                                                                               | Needs                                       |
-| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
-| Aircraft          | [adsb.lol](https://www.adsb.lol/) (ODbL); flight routes from Virtual Radar Server standing data (CC0)                                                | the gateway                                 |
-| Ships             | [Fintraffic Digitraffic](https://www.digitraffic.fi/en/marine-traffic/) (Finnish waters, CC BY 4.0); [AISStream.io](https://aisstream.io/) worldwide | the gateway; a free key for worldwide ships |
-| Satellites        | [CelesTrak](https://celestrak.org/) orbital elements, propagated in the browser; a bundled snapshot fills in when CelesTrak cannot be reached        | nothing                                     |
-| Earthquakes       | [USGS](https://earthquake.usgs.gov/) (public domain)                                                                                                 | nothing                                     |
-| Undersea cables   | [OpenStreetMap](https://www.openstreetmap.org/copyright) (ODbL), baked into a bundled file                                                           | nothing                                     |
-| Rain radar        | [RainViewer](https://www.rainviewer.com/) (or NASA IMERG, see [configuration](#configuration))                                                       | nothing                                     |
-| Satellite imagery | [NASA GIBS](https://nasa-gibs.github.io/gibs-api-docs/), VIIRS NOAA-20 true colour                                                                   | nothing                                     |
-| Wildfires         | [NASA FIRMS](https://firms.modaps.eosdis.nasa.gov/)                                                                                                  | the gateway with a free key                 |
-| Webcams           | Fintraffic road weather cameras; Hong Kong Transport Department traffic snapshots                                                                    | nothing                                     |
-| Day and night     | Computed sun position; NASA Black Marble city lights                                                                                                 | nothing                                     |
-| Base map          | [Protomaps](https://protomaps.com/) tiles from OpenStreetMap                                                                                         | nothing for zoom 0 to 5                     |
+| Layer             | Source                                                                                                                                                                      | Needs                                       |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| Aircraft          | [adsb.lol](https://www.adsb.lol/) (ODbL); flight routes from Virtual Radar Server standing data (CC0)                                                                       | the gateway                                 |
+| Ships             | [Fintraffic Digitraffic](https://www.digitraffic.fi/en/marine-traffic/) (Finnish waters, CC BY 4.0); [AISStream.io](https://aisstream.io/) worldwide                        | the gateway; a free key for worldwide ships |
+| Satellites        | [CelesTrak](https://celestrak.org/) orbital elements, propagated in the browser; a bundled snapshot fills in when CelesTrak cannot be reached                               | nothing                                     |
+| Earthquakes       | [USGS](https://earthquake.usgs.gov/) (public domain)                                                                                                                        | nothing                                     |
+| Undersea cables   | [OpenStreetMap](https://www.openstreetmap.org/copyright) (ODbL), baked into a bundled file                                                                                  | nothing                                     |
+| Rain radar        | [RainViewer](https://www.rainviewer.com/) (or NASA IMERG, see [configuration](#configuration))                                                                              | nothing                                     |
+| Satellite imagery | [NASA GIBS](https://nasa-gibs.github.io/gibs-api-docs/), VIIRS NOAA-20 true colour                                                                                          | nothing                                     |
+| Wildfires         | [NASA FIRMS](https://firms.modaps.eosdis.nasa.gov/)                                                                                                                         | the gateway with a free key                 |
+| Webcams           | Official traffic and road weather cameras: Fintraffic (Finland), Hong Kong Transport Department, Singapore LTA, DriveBC (British Columbia), City of Calgary, City of Austin | nothing                                     |
+| Day and night     | Computed sun position; NASA Black Marble city lights                                                                                                                        | nothing                                     |
+| Base map          | [Protomaps](https://protomaps.com/) tiles from OpenStreetMap                                                                                                                | nothing for zoom 0 to 5                     |
 
 Aircraft photos in the detail panel come from [Planespotters.net](https://www.planespotters.net/),
 fetched by the browser and credited to the photographer. Place search uses a bundled
@@ -359,7 +359,8 @@ tested yet: the Docker image and the Fly.io configuration have never been built 
   provider responses so it does not ask a rate-limited provider twice.
 - Your browser fetches most open feeds from their providers itself: satellite orbital
   elements (from the gateway's shared cache when one is configured), USGS, RainViewer, NASA, Fintraffic, Hong Kong's Transport Department,
-  Planespotters.net when you select an aircraft, and Protomaps if a key is configured. Those
+  the traffic camera publishers (data.gov.sg, the B.C. Data Catalogue and DriveBC, and the
+  Calgary and Austin open data portals and camera hosts), Planespotters.net when you select an aircraft, and Protomaps if a key is configured. Those
   providers see your IP address, as with any web request.
 - The gateway does not log visitors' addresses. It counts connections per address in memory
   to enforce its limits.
@@ -384,7 +385,9 @@ Contributions are welcome: see [CONTRIBUTING.md](CONTRIBUTING.md) and our
 The data comes from people and agencies who publish it openly: adsb.lol and the people who
 feed it, Fintraffic, AISStream.io, CelesTrak and the U.S. Space Force, the U.S. Geological
 Survey, OpenStreetMap contributors, Protomaps, RainViewer, NASA (GIBS, FIRMS, Earth
-Observatory), the Hong Kong Transport Department, Planespotters.net and its photographers,
+Observatory), the Hong Kong Transport Department, Singapore's Land Transport Authority, the
+B.C. Ministry of Transportation and Transit, The City of Calgary, Austin Transportation and
+Public Works, Planespotters.net and its photographers,
 GeoNames, and the Virtual Radar Server standing data project.
 
 Built on [MapLibre GL JS](https://maplibre.org/), [deck.gl](https://deck.gl/),

@@ -61,6 +61,10 @@ describe("createSources", () => {
       ["nasa-firms", "fires"],
       ["digitraffic-weathercams", "webcams"],
       ["hk-traffic-cameras", "webcams"],
+      ["sg-lta-traffic-images", "webcams"],
+      ["drivebc-highwaycams", "webcams"],
+      ["calgary-traffic-cameras", "webcams"],
+      ["austin-traffic-cameras", "webcams"],
     ]);
     // Windy's terms forbid publishing its key, and nothing here may need a key in the bundle.
     expect(plugins.some((p) => p.id.includes("windy"))).toBe(false);
