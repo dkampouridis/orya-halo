@@ -66,6 +66,29 @@ describe("plainText", () => {
   });
 });
 
+describe("detail rows", () => {
+  test("every plugin restates schema rows, so the panel shows its list and not the raw meta", () => {
+    const cases: [SourcePlugin, Partial<{ fields: { key: string }[] }>][] = [
+      [sgLtaTrafficCameras as SourcePlugin, sgCameraDetail(sgCameras(JSON.parse(sgBody))[0].meta)],
+      [driveBcHighwayCams as SourcePlugin, driveBcDetail(driveBcCameras(bcCsv)[0].meta)],
+      [
+        calgaryTrafficCameras as SourcePlugin,
+        calgaryDetail(calgaryCameras(JSON.parse(calgaryBody))[0].meta),
+      ],
+      [
+        austinTrafficCameras as SourcePlugin,
+        austinDetail(austinCameras(JSON.parse(austinBody))[0].meta),
+      ],
+    ];
+    for (const [plugin, detail] of cases) {
+      const keys = detail.fields?.map((f) => f.key) ?? [];
+      const schema = new Set(plugin.schema.map((f) => f.key));
+      expect(keys.some((key) => schema.has(key))).toBe(true);
+      expect(new Set(keys).size).toBe(keys.length);
+    }
+  });
+});
+
 describe("Singapore LTA traffic cameras", () => {
   const feed = JSON.parse(sgBody) as SgTrafficImages;
 
@@ -231,7 +254,13 @@ describe("DriveBC highway cameras", () => {
       credit: "DriveBC, B.C. Ministry of Transportation and Transit",
       alt: "Highway camera at Elkford, looking north",
     });
-    expect(detail?.fields?.map((f) => f.key)).toEqual(["place", "highway", "region", "views"]);
+    expect(detail?.fields?.map((f) => f.key)).toEqual([
+      "place",
+      "highway",
+      "region",
+      "views",
+      "provider",
+    ]);
     expect(driveBcDetail({ views: "../1:N" })).toEqual({});
   });
 

@@ -187,6 +187,11 @@ export function driveBcDetail(meta: EntityMeta): Partial<EntityDetail> {
     numeric: media.length,
   });
   if (text("note")) fields.push({ key: "note", label: "Note", value: text("note") });
+  fields.push({
+    key: "provider",
+    label: "Provider",
+    value: "B.C. Ministry of Transportation and Transit",
+  });
 
   return {
     title,

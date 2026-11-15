@@ -85,9 +85,11 @@ export function calgaryDetail(meta: EntityMeta): Partial<EntityDetail> {
   return {
     title,
     subtitle: "Traffic camera · Calgary, Alberta, Canada",
+    // Schema keys, so the panel takes this list as the whole of it and leaves out the image address.
     fields: [
       ...(camera ? [{ key: "camera", label: "Camera", value: camera }] : []),
       ...(quadrant ? [{ key: "quadrant", label: "Quadrant", value: quadrant }] : []),
+      { key: "provider", label: "Provider", value: "The City of Calgary" },
     ],
     media: [
       {

@@ -101,7 +101,10 @@ export function austinDetail(meta: EntityMeta): Partial<EntityDetail> {
   return {
     title,
     subtitle: "Traffic camera · Austin, Texas, United States",
-    fields: [{ key: "camera", label: "Camera", value: id }],
+    fields: [
+      { key: "cameraId", label: "Camera", value: id },
+      { key: "provider", label: "Provider", value: "Austin Transportation and Public Works" },
+    ],
     media: [
       {
         type: "image",

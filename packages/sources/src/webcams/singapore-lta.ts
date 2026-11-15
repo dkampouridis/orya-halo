@@ -101,9 +101,10 @@ export function sgCameraDetail(
   const detail: Partial<EntityDetail> = {
     title: `Traffic camera ${id}`,
     subtitle: "Traffic camera · Singapore",
+    // Schema keys, so the panel takes this list as the whole of it and leaves out the image address.
     fields: [
-      { key: "camera", label: "Camera", value: id },
-      { key: "operator", label: "Operator", value: "Land Transport Authority" },
+      { key: "cameraId", label: "Camera", value: id },
+      { key: "provider", label: "Provider", value: "Land Transport Authority" },
     ],
     media: image
       ? [
