@@ -10,7 +10,12 @@
  * allows copying, publishing, adapting and distributing, commercial or not,
  * with the statement "Contains information licensed under the Open
  * Government Licence – British Columbia" and, where possible, a link; no
- * suggestion of official status. The CSV (about 250 KB, some 1,040 views at
+ * suggestion of official status. The licence covers the Catalogue records;
+ * for the images themselves the only explicit statement is the BC HighwayCam
+ * terms page (images.drivebc.ca, as archived on 2025-08-17; drivebc.ca now
+ * has no terms page): "BC HighwayCam images are now available through DataBC
+ * Catalogue, and may be republished under the terms and conditions of the
+ * Open Government License (OGL)." The CSV (about 250 KB, some 1,040 views at
  * about 490 locations, updated monthly) and the camera images answer
  * `Access-Control-Allow-Origin: *`; the images also send
  * `Cross-Origin-Resource-Policy: cross-origin`.

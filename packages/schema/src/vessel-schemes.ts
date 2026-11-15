@@ -564,7 +564,8 @@ export function shipValueFor(info: VesselInfo): number {
 // ── A ship's batch value ──────────────────────────────────────────────────
 //
 // Four fields in one exact float32 integer (below 2^24): length in 2 m steps
-// (8 bits, to 510 m), beam in metres (6 bits, to 63 m, AIS's own ceiling),
+// (8 bits, to 510 m), beam in metres (6 bits, to 63 m; AIS reports up to 126 m as
+// two 6-bit sides, and the few wider ships are clamped, which the models absorb),
 // model (4 bits) and scheme (6 bits).
 
 const LENGTH_STEP_M = 2;

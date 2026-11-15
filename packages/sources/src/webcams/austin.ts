@@ -9,10 +9,12 @@
  * https://data.austintexas.gov/stories/s/ranj-cccq, plus live requests): the
  * dataset is marked public domain; the terms say data on the portal is
  * "offered free and without restriction", disclaim any warranty, and let the
- * City end any display of its data. No credit is required; one is given as
- * a courtesy. The list (Socrata, about 120 KB for some 820 working cameras,
+ * City end any display of its data. They also ask for credit to both the
+ * City and the department the data comes from, which the attribution gives. The list (Socrata, about 120 KB for some 820 working cameras,
  * updated daily) answers `Access-Control-Allow-Origin: *`; the screenshots
- * on cctv.austinmobility.io are plain JPEGs shown with `<img>`. Socrata
+ * on cctv.austinmobility.io are plain JPEGs shown with `<img>`; that host
+ * refreshes them every 5 minutes and allows 1,000 requests per 5 minutes per
+ * client, and the app loads one only when its camera is selected. Socrata
  * throttles requests without an app token per address; one request an hour
  * is far inside that.
  */
@@ -30,7 +32,7 @@ const TERMS_URL = "https://data.austintexas.gov/stories/s/ranj-cccq";
 const SOURCE_ID = "austin-traffic-cameras";
 
 export const AUSTIN_ATTRIBUTION: Attribution = {
-  text: "Traffic cameras: Austin Transportation and Public Works, City of Austin Open Data Portal (public domain; credit given as courtesy)",
+  text: "Traffic cameras: Austin Transportation and Public Works, City of Austin Open Data Portal (public domain; credit as the City asks)",
   url: DATASET_PAGE,
   onMap: false,
 };

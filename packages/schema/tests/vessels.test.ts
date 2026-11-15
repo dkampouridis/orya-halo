@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { describe, expect, test } from "vite-plus/test";
 import {
   FIRST_OPERATOR_SCHEME,
@@ -29,6 +31,60 @@ describe("vessel models", () => {
     expect(VESSEL_MODELS.length).toBeLessThan(16);
     for (const id of Object.values(VesselModel)) {
       if (id !== VesselModel.Unknown) expect(vesselModel(id)?.id).toBe(id);
+    }
+  });
+
+  test("every ship type phrase the gateway sends picks the model it should", () => {
+    // The phrases are a protocol contract (docs/PROTOCOL.md): read them from
+    // the gateway's own source, so rewording one there fails here.
+    const source = readFileSync(
+      fileURLToPath(new URL("../../../apps/gateway/src/upstream/ais.rs", import.meta.url)),
+      "utf8",
+    );
+    const body = source.slice(source.indexOf("pub fn ship_type_name"));
+    // Up to the function's closing brace (the checkout may use either line ending).
+    const end = body.search(/\n\}\r?\n/);
+    const phrases = [...body.slice(0, end).matchAll(/=> "([^"]+)"/g)].map((m) => m[1]);
+    const expected: Record<string, number> = {
+      "Wing in ground craft": VesselModel.Generic,
+      "Fishing vessel": VesselModel.Fishing,
+      "Towing vessel": VesselModel.Tug,
+      "Dredger or underwater operations": VesselModel.Generic,
+      "Diving vessel": VesselModel.Generic,
+      Military: VesselModel.Patrol,
+      "Sailing vessel": VesselModel.SailingYacht,
+      "Pleasure craft": VesselModel.MotorYacht,
+      "High-speed craft": VesselModel.Ferry,
+      "Pilot vessel": VesselModel.PilotBoat,
+      "Search and rescue vessel": VesselModel.Patrol,
+      Tug: VesselModel.Tug,
+      "Port tender": VesselModel.PilotBoat,
+      "Anti-pollution vessel": VesselModel.Generic,
+      "Law enforcement": VesselModel.Patrol,
+      "Medical transport": VesselModel.Generic,
+      "Passenger ship": VesselModel.Ferry,
+      "Cargo ship": VesselModel.GeneralCargo,
+      Tanker: VesselModel.Tanker,
+      "Other type": VesselModel.Generic,
+    };
+    expect(phrases.sort()).toEqual(Object.keys(expected).sort());
+    const categoryOf: Record<string, number> = {
+      "Passenger ship": Passenger,
+      "Cargo ship": Cargo,
+      Tanker,
+      "Fishing vessel": Fishing,
+      "Sailing vessel": Pleasure,
+      "Pleasure craft": Pleasure,
+      "High-speed craft": HighSpeed,
+      Military,
+    };
+    for (const phrase of phrases) {
+      const model = vesselModelFor({
+        category: categoryOf[phrase] ?? Service,
+        typeName: phrase,
+        lengthM: 60,
+      });
+      expect([phrase, model]).toEqual([phrase, expected[phrase]]);
     }
   });
 

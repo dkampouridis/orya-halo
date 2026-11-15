@@ -78,6 +78,11 @@ export interface ShipModelsLayerProps extends LayerProps {
    */
   glyphPixels?: number;
   maxModels?: number;
+  /**
+   * Called each frame with whether more were in view than `maxModels`. The
+   * engine then keeps the glyph bodies, so the ones without a model still show.
+   */
+  onOverflow?: ((overflow: boolean) => void) | null;
   /** Id drawn a little brighter. */
   selectedId?: number | null;
   /** Extra scale for the selected ship (the 3D view's close-up). */
@@ -97,6 +102,7 @@ const defaultProps: DefaultProps<ShipModelsLayerProps> = {
   timeMs: { type: "number", value: 0 },
   glyphPixels: { type: "number", value: 14 },
   maxModels: { type: "number", value: 400 },
+  onOverflow: { type: "function", value: null, compare: false },
   selectedId: { type: "object", value: null },
   selectedScale: { type: "number", value: 1 },
 };
@@ -251,7 +257,9 @@ export class ShipModelsLayer extends CompositeLayer<Required<ShipModelsLayerProp
       candidates.push({ i, d: dx * dx + dy * dy, lon, lat });
     }
     candidates.sort((a, b) => a.d - b.d);
-    if (candidates.length > maxModels) candidates.length = maxModels;
+    const overflow = candidates.length > maxModels;
+    if (overflow) candidates.length = maxModels;
+    this.props.onOverflow?.(overflow);
 
     const groups = new Map<number, Placed[]>();
     for (const c of candidates) {

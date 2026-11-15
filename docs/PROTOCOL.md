@@ -189,7 +189,7 @@ known, and is never empty.
 | 1   | label        | Callsign or flight number; ship name. Trimmed                                 |
 | 2   | registration | Aircraft registration, e.g. `EI-DVM`                                          |
 | 3   | typeCode     | ICAO type designator, e.g. `A320`                                             |
-| 4   | typeName     | Type in words, e.g. `AIRBUS A-320`                                            |
+| 4   | typeName     | Type in words: aircraft e.g. `AIRBUS A-320`; ships, see below                 |
 | 5   | operator     | Operator or owner                                                             |
 | 6   | origin       | Not sent in Meta. Routes come from the detail endpoint                        |
 | 7   | destination  | Ships: destination as broadcast, free text                                    |
@@ -208,6 +208,14 @@ known, and is never empty.
 `Restricted manoeuvrability`, `Constrained by draught`, `Moored`, `Aground`,
 `Engaged in fishing`, `Under way sailing`, `Towing astern`,
 `Pushing ahead or towing alongside`, `AIS-SART active`.
+
+For ships, `typeName` is the AIS ship-and-cargo type as one of these phrases, which are
+stable: the web app picks a ship's 3D model and colours from them, so changing one is a
+protocol change. `Wing in ground craft`, `Fishing vessel`, `Towing vessel`,
+`Dredger or underwater operations`, `Diving vessel`, `Military`, `Sailing vessel`,
+`Pleasure craft`, `High-speed craft`, `Pilot vessel`, `Search and rescue vessel`, `Tug`,
+`Port tender`, `Anti-pollution vessel`, `Law enforcement`, `Medical transport`,
+`Passenger ship`, `Cargo ship`, `Tanker`, `Other type`. It is left out for undefined codes.
 
 AIS broadcasts an ETA without a year. The gateway picks the year that puts the date nearest
 to today.

@@ -121,7 +121,7 @@ export const calgaryTrafficCameras = defineSource<CalgaryRaw>({
   // The list is republished daily; each image keeps its address and is fetched on selection.
   refreshRate: 3_600_000,
   licence: {
-    name: "Open Government Licence – City of Calgary",
+    name: "Open Government Licence – City of Calgary 2.1",
     url: LICENCE_URL,
     display: true,
     redistribution: true,

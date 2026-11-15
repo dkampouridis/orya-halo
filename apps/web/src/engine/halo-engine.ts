@@ -490,6 +490,9 @@ export class HaloEngineImpl implements HaloEngine {
 
   private layers: Layer[] = [];
   private layersDirty = true;
+  /** More aircraft or ships in view than get a model: their glyph bodies stay on. */
+  private modelsOverflow = false;
+  private shipModelsOverflow = false;
   /** Where the aircraft models layer sits in `layers`, or -1 when it is not drawn. */
   private modelsIndex = -1;
   /** Where the ship models layer sits in `layers`, or -1 when it is not drawn. */
@@ -1332,6 +1335,11 @@ export class HaloEngineImpl implements HaloEngine {
       targetPixels: this.chasing ? size.target * far : size.target,
       minPixels: this.chasing ? size.min * far : size.min,
       maxModels: QUALITY[this.quality].aircraftModels,
+      onOverflow: (over: boolean) => {
+        if (over === this.modelsOverflow) return;
+        this.modelsOverflow = over;
+        this.layersDirty = true;
+      },
       opacity: t * t * (3 - 2 * t),
     });
   }
@@ -1367,6 +1375,11 @@ export class HaloEngineImpl implements HaloEngine {
       selectedId: this.selection?.kind === EntityKind.Ship ? this.selection.id : null,
       selectedScale: chasingShip ? this.chaseScale(this.chaseSubject().size) * (1 - far) + far : 1,
       maxModels: QUALITY[this.quality].shipModels,
+      onOverflow: (over: boolean) => {
+        if (over === this.shipModelsOverflow) return;
+        this.shipModelsOverflow = over;
+        this.layersDirty = true;
+      },
       opacity: chasingShip ? 1 : t * t * (3 - 2 * t),
     });
   }
@@ -1642,10 +1655,13 @@ export class HaloEngineImpl implements HaloEngine {
           glow: q.glow,
           farThin: q.farThin,
           slowMotion: this.reducedMotion,
+          // Glyph bodies give way to models, unless more are in view than get
+          // one: then the bodies stay, under the models of the nearest, so
+          // none of the rest disappears (a moored ship has no tail to show).
           bodyFadeZoomRange:
-            kind === EntityKind.Aircraft && q.aircraftModels > 0
+            kind === EntityKind.Aircraft && q.aircraftModels > 0 && !this.modelsOverflow
               ? MODEL_ZOOM
-              : kind === EntityKind.Ship && q.shipModels > 0
+              : kind === EntityKind.Ship && q.shipModels > 0 && !this.shipModelsOverflow
                 ? SHIP_MODEL_ZOOM
                 : null,
           pickable: true,

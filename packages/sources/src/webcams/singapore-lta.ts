@@ -9,9 +9,14 @@
  * plus live requests): Singapore Open Data Licence 1.0, which allows use,
  * copying, distribution and adaptation, commercial or not, with a
  * conspicuous notice naming the dataset and linking to the licence, and no
- * suggestion of official status. A key is optional: without one the
- * real-time APIs allow 6 requests per 10 seconds. The list and the 1920 x
- * 1080 JPEGs answer `Access-Control-Allow-Origin: *`. The feed has no
+ * suggestion of official status. data.gov.sg calls keyless access "for
+ * testing" and recommends a key for production; a key cannot be kept secret
+ * in a browser app, so none is used. The published limit without a key (6
+ * requests per 10 seconds) is listed for the v2 real-time APIs; this v1
+ * endpoint is not listed, and one request every 5 minutes is far inside it
+ * either way. The list answers `Access-Control-Allow-Origin: *`; the 1920 x
+ * 1080 JPEGs on images.data.gov.sg do not, and are shown with a plain `<img>`
+ * (no `crossOrigin`), which needs none. The feed has no
  * camera names, only numbers, and each image has its own address, so the
  * newest one is looked up again when a camera is selected.
  */
@@ -145,7 +150,7 @@ export const sgLtaTrafficCameras = defineSource<SgTrafficRaw>({
     redistribution: true,
     commercial: true,
     notes:
-      "Show a conspicuous notice naming the dataset and linking to the licence; do not suggest official status. Without a key the real-time APIs allow 6 requests per 10 seconds.",
+      "Show a conspicuous notice naming the dataset and linking to the licence; do not suggest official status. Keyless access is described as for testing; the published 6 requests per 10 seconds is for the v2 real-time APIs. Images are shown with a plain <img>.",
     verified: "2026-11-15",
   },
   attribution: SG_LTA_ATTRIBUTION,
