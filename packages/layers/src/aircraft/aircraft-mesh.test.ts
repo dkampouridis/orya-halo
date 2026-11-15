@@ -64,6 +64,9 @@ describe("buildAircraftMesh", () => {
           // The sine round the fuselage, and the distance from the nose.
           expect(Math.abs(tags[i * 3 + 1])).toBeLessThanOrEqual(1.0001);
           expect(tags[i * 3 + 2]).toBeGreaterThanOrEqual(-1e-6);
+          // The share of the length from the tail, 0..1.
+          expect(cabin[i * 2 + 1]).toBeGreaterThanOrEqual(-1e-6);
+          expect(cabin[i * 2 + 1]).toBeLessThanOrEqual(1 + 1e-6);
         }
       }
       expect(parts.has(MeshPart.Fin)).toBe(true);
@@ -93,6 +96,9 @@ describe("buildAircraftMesh", () => {
       if (tags[i * 3 + 1] > 0.9) expect(pos[i * 3 + 2]).toBeGreaterThan(0);
       if (cabin[i * 2] > 1.05) expect(pos[i * 3]).toBeGreaterThan(a320.lengthM * 0.3);
       if (cabin[i * 2] < -0.05) expect(pos[i * 3]).toBeLessThan(-a320.lengthM * 0.2);
+      // The share of the length from the tail runs with x, tail tip 0 to nose 1.
+      const u = cabin[i * 2 + 1];
+      expect(pos[i * 3]).toBeCloseTo(-a320.lengthM / 2 + u * a320.lengthM, 3);
     }
   });
 });

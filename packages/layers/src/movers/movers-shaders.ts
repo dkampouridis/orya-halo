@@ -1,5 +1,19 @@
-import { AIRCRAFT_LIVERIES, BLEND_SECONDS, EARTH_RADIUS_M, liveryMark } from "@orya-halo/schema";
+import {
+  AIRCRAFT_LIVERIES,
+  BLEND_SECONDS,
+  EARTH_RADIUS_M,
+  layerDef,
+  liveryMark,
+} from "@orya-halo/schema";
 import type { ShaderModule } from "@luma.gl/shadertools";
+import {
+  GLYPH_LIFT,
+  darkenColour,
+  hexToRgb,
+  liftColour,
+  rgbDistance,
+} from "../aircraft/livery-colour.ts";
+import type { Rgb } from "../aircraft/livery-colour.ts";
 import { haloCommonVS, haloShapesFS } from "../shaders/common.glsl.ts";
 
 const uniformBlock = /* glsl */ `\
@@ -124,26 +138,35 @@ export const GLYPH_SCALE = {
 const glslArray = (values: readonly number[]): string =>
   `float[${values.length}](${values.map((v) => v.toFixed(3)).join(", ")})`;
 
-/** An airline's mark is drawn at least this bright (its largest channel, 0..1), to show on a dark map. */
-const MARK_BRIGHTNESS = 0.82;
+/** The aircraft layer's own colour, which an airline's mark must not be mistaken for. */
+const AIRCRAFT_CYAN = hexToRgb(layerDef("aircraft").accent);
+/** A mark nearer the aircraft cyan than this (RGB distance, 0..1 channels) is darkened until it is not. */
+export const MARK_CYAN_DISTANCE = 0.5;
 
 /**
- * The colour an aircraft glyph's tail is painted in, by airline colour scheme
- * id (the aircraft's third style byte): the scheme's `liveryMark`, brightened
- * if dark so its hue shows on a few pixels over the night side. Null where
- * the scheme has no such colour (and for id 0, an unknown airline): those
- * tails stay the layer's colour.
+ * An airline's mark as a glyph draws it: lifted in lightness, hue and chroma
+ * kept (`liftColour`), so its hue shows on a few pixels over the night side;
+ * then, if that leaves it close to the aircraft layer's cyan (light blues and
+ * teals), darkened instead until it stands apart from it.
  */
-export const AIRLINE_MARKS: readonly ([number, number, number] | null)[] = AIRCRAFT_LIVERIES.map(
-  (livery) => {
-    const hex = livery.id === 0 ? null : liveryMark(livery);
-    if (!hex) return null;
-    const n = Number.parseInt(hex.slice(1), 16);
-    const c = [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
-    const k = Math.max(1, MARK_BRIGHTNESS / Math.max(...c));
-    return [c[0] * k, c[1] * k, c[2] * k];
-  },
-);
+export function glyphMarkColour(hex: string): Rgb {
+  const lifted = liftColour(hexToRgb(hex), GLYPH_LIFT);
+  let c = lifted;
+  for (let i = 0; i < 60 && rgbDistance(c, AIRCRAFT_CYAN) < MARK_CYAN_DISTANCE; i++)
+    c = darkenColour(lifted, (i + 1) * 0.01);
+  return c;
+}
+
+/**
+ * The colour an aircraft glyph's rear half is painted in, by airline colour
+ * scheme id (the aircraft's third style byte): the scheme's `liveryMark` as
+ * `glyphMarkColour` draws it. Null where the scheme has no such colour (and
+ * for id 0, an unknown airline): those glyphs stay the layer's colour.
+ */
+export const AIRLINE_MARKS: readonly (Rgb | null)[] = AIRCRAFT_LIVERIES.map((livery) => {
+  const hex = livery.id === 0 ? null : liveryMark(livery);
+  return hex ? glyphMarkColour(hex) : null;
+});
 
 const markTable = `vec4[${AIRLINE_MARKS.length}](${AIRLINE_MARKS.map((m) =>
   m ? `vec4(${m.map((v) => v.toFixed(3)).join(", ")}, 1.0)` : "vec4(0.0)",
@@ -423,8 +446,12 @@ flat in vec4 vMark;
 
 out vec4 fragColor;
 
-// An aircraft's tail, behind the wings, is painted in its airline's colour.
-const float MARK_FROM = -0.42;
+// An aircraft's rear half is painted in its airline's colour: the fuselage
+// from mid-wing back (with the wing roots, within MARK_HALF_WIDTH of the
+// axis) and all of the tailplane, behind MARK_TAILPLANE.
+const float MARK_FROM = -0.1;
+const float MARK_HALF_WIDTH = 0.24;
+const float MARK_TAILPLANE = -0.6;
 
 ${haloShapesFS}
 
@@ -501,9 +528,11 @@ void main(void) {
     float rim = max(core - inner, 0.0);
     float part = (1.0 - smoothstep(-aa, aa, detail)) * inner;
     float body = vShape.y > 0.5 ? 0.1 : 0.36;
-    // The airline's colour on the tail, drawn solid so a few pixels of it show
-    // (on the ground, only in the rim: a parked aircraft stays an outline).
-    float mark = vMark.a * (1.0 - smoothstep(-aa, aa, p.x - MARK_FROM));
+    // The airline's colour on the rear half, drawn solid so a few pixels of it
+    // show (on the ground, only in the rim: a parked aircraft stays an outline).
+    float rearHalf = 1.0 - smoothstep(-aa, aa, p.x - MARK_FROM);
+    float spine = 1.0 - smoothstep(-aa, aa, min(abs(p.y) - MARK_HALF_WIDTH, p.x - MARK_TAILPLANE));
+    float mark = vMark.a * rearHalf * spine;
     part = max(part, mark * inner * (1.0 - vShape.y));
     float fill = mix(1.0, mix(body, 0.88, part), open);
     vec3 rimRgb = mix(mix(base, vec3(1.0), 0.3 * open), vMark.rgb, mark);
@@ -519,8 +548,11 @@ void main(void) {
     }
 
     float tailOnly = tail * (1.0 - core);
-    // (The glow stays off the airline's colour, which it would turn towards the layer's.)
-    vec3 rgb = (rimRgb * rim + fillRgb * inner * fill + base * glow * 0.42 * (1.0 - mark * core)) * movers.body + base * tailOnly;
+    // Round the rear half the glow takes the airline's colour, so on a glyph
+    // a few pixels long the colour reaches past the silhouette instead of
+    // being swamped by cyan; over the colour itself it stays off.
+    vec3 glowRgb = mix(base, vMark.rgb, mark);
+    vec3 rgb = (rimRgb * rim + fillRgb * inner * fill + glowRgb * glow * 0.42 * (1.0 - mark * core)) * movers.body + base * tailOnly;
     float alpha = (rim + inner * fill) * movers.body + tailOnly * 0.8;
 
     if (vFlags.y > 0.5) {
@@ -528,9 +560,9 @@ void main(void) {
       float ringAt = mix(1.5, 2.9, movers.pulse);
       float ring = (1.0 - smoothstep(0.0, vPixel * 1.4, abs(r - ringAt))) * (1.0 - movers.pulse);
       float steady = (1.0 - smoothstep(0.0, vPixel * 1.2, abs(r - 1.5))) * 0.8;
-      float mark = max(ring, steady);
-      rgb += movers.emergencyColor * mark;
-      alpha = max(alpha, mark);
+      float alarm = max(ring, steady);
+      rgb += movers.emergencyColor * alarm;
+      alpha = max(alpha, alarm);
     }
     // Small glyphs sit back a little so the planet under them stays the subject.
     shape = vec4(rgb, alpha) * mix(0.72, 1.0, presence);

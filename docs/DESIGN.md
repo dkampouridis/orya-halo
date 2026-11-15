@@ -76,13 +76,18 @@ dashes, and take their true proportions only as they grow towards true scale. Si
 category live in `GLYPH_SCALE` (`packages/layers/src/movers/movers-shaders.ts`), shared by
 the shaders and the selection ring, which grows to clear the silhouette it marks.
 
-An aircraft glyph whose airline is known carries the airline's colour on its tail, behind the
-wings, drawn solid and kept clear of the cyan glow: from a continent away it is a hint of
-which airline that is, and it hands over to the model's coloured fin as the models fade in.
-The colour is the scheme's first coloured paint (`liveryMark`: an all-over fuselage colour,
-else the fin, its second colour, the rear fuselage, the belly, the engines), brightened if
-dark so its hue shows over the night side. Schemes of only white, grey and black, and
-aircraft with no known airline, keep the layer's cyan, so cyan still says "aircraft".
+An aircraft glyph whose airline is known carries the airline's colour on its rear half (the
+fuselage from mid-wing back, the wing roots and the tailplane), drawn solid, with the glow
+round it tinted to match so a few pixels of colour are not swamped by cyan: from a continent
+away it is a hint of which airline that is, and it hands over to the models' coloured spine
+as they fade in. The colour is the scheme's own mark where it names one, else its first
+coloured paint (`liveryMark`: an all-over fuselage colour, else the fin, its second colour, the
+rear fuselage, the cheatline, the belly, the engines). Dark ones are lifted in lightness only,
+in OKLCH, with hue and chroma kept and dark colours kept in order (`liftColour` in
+`packages/layers/src/aircraft/livery-colour.ts`), so navy stays darker than royal blue and
+maroon does not turn pink; any mark that would then sit close to the aircraft cyan (light
+blues and teals) is darkened instead. Schemes of only white, grey and black, and aircraft with
+no known airline, keep the layer's cyan, so cyan still says "aircraft".
 
 From a country away (zoom 5.6 to 6.6) aircraft turn from glyphs into 3D models of their real types:
 the glyph fades out as the model fades in, keeping its trail and its click target. The models
@@ -92,15 +97,25 @@ models, with a stand-in by ADS-B category when the type is not known), so an A38
 and a Cessna a Cessna. Each is painted in its airline's colour scheme, picked by the callsign's
 ICAO prefix (`packages/schema/src/aircraft-liveries.ts`: about 80 airlines): top and belly
 colours, the fin with an optional second colour, engines, and where the airline paints them a
-coloured nose (easyJet, Norwegian) or the fin's colour carried onto the tail cone (Ryanair,
-Wizz Air, Qatar Airways), plus cabin windows and flight-deck glass drawn in the shader. No
-logos, names or artwork, only flat colours; aircraft with no known airline stay the app's
-light grey. Most airliners are white from above, and the fin that carries most airlines'
-colour is edge-on there, so while a model is small on screen (up to 40 px long, easing off by
-200 px) its fin is drawn up to five times its true thickness, which shows its colour from
-above as a mark over the rear fuselage, and dark livery colours with a hue are lifted towards
-their mid tone, so navy reads as blue rather than black on a few pixels. Neither touches the
-3D view's close-up. They bank in turns and pitch on
+coloured nose (Norwegian), the fin's colour carried onto the rear fuselage (Ryanair, easyJet,
+Wizz Air, Austrian; from where it starts, and above a line round the fuselage, so
+Lufthansa's blue can sit over a white tail cone) or a cheatline (VistaJet), plus cabin
+windows and flight-deck glass drawn in the shader. No logos, names or artwork, only flat
+colours; aircraft with no known airline stay the app's light grey.
+
+Small models exaggerate their colours, as a map symbol does. Most airliners are white from
+above and the fin that carries most airlines' colour is edge-on there: on a model 26 to 40 px
+long a true fin is a speck a pixel or two wide, the same speck for twenty red-finned
+airlines. So while a model is small on screen (up to 40 px long, easing off by 200 px) a
+strip along the top of the fuselage, from the tail forward to half its length and narrowing
+towards its front, carries the fin's colours as if the fin were laid flat along the spine
+(leading edge forward, tip down the middle: British Airways' red trails its blue, Emirates'
+red leads its green; a black fin too, as Air Canada's), or the airline's mark where the fin
+is white. Aircraft with no known airline get no strip. The fin itself is drawn
+up to four times its true thickness when seen from above, less as it is seen side-on, where
+its colour shows anyway, and dark colours are lifted as the glyphs' are (less, since they sit
+on a white fuselage). All of it shortens and fades as the model grows, so the 3D view's
+close-up shows each scheme as it is. They bank in turns and pitch on
 climbs and descents, and are drawn larger than life (a 40 m airliner 26 px long from a country away,
 48 px close in) until true size can be seen, all by the same factor so relative sizes stay
 true. At most 3,000 are drawn (800 on the balanced tier, none on the cheapest), nearest the

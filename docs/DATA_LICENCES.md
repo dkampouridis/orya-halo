@@ -73,13 +73,21 @@ width, wing sweep, engine layout), which are facts rather than anyone's design. 
 3D model, livery artwork or logo is used, so there is nothing to license or credit.
 
 They are painted in simplified airline colour schemes (`packages/schema/src/aircraft-liveries.ts`):
-a few flat colours per airline (fuselage top and belly, fin, engines, and for some the nose or
-the fin's colour carried onto the tail cone), chosen by eye as an impression of how its
-aircraft look from a distance. Small on screen, the fin is drawn thicker and dark colours
-brighter so the colour can be seen at all, and the flat aircraft symbols further out carry one
-of these colours on their tail. No logo, name, emblem, typeface or artwork
-is drawn, the schemes are not copies of any livery, and no airline made or endorsed them. The
-airline is read from the flight's callsign; nothing else about the airline is shown.
+a few flat colours per airline (fuselage top and belly, fin, engines, and for some the nose,
+the fin's colour carried onto the rear fuselage or a cheatline), chosen by eye as an
+impression of how its aircraft look from a distance and checked against public descriptions
+and photographs of current schemes (Wikipedia, AirlineGeeks, airline press releases; last on
+2026-11-15). Where an airline's fin carries only an emblem, the emblem's colour is drawn as a
+plain area of the fin, never its shape.
+
+Small on screen the schemes are deliberately exaggerated, as a map symbol is: the fin's
+colours are also laid along the top of the fuselage, the fin is drawn thicker and dark colours
+lighter, so the airline can be told at all from a few pixels. This is a symbol, not a claim
+about how the aircraft is painted; it fades out as the model grows, and the 3D view's
+close-up shows the scheme without it. The flat aircraft symbols further out carry one of these
+colours on their rear half. No logo, name, emblem, typeface or artwork is drawn, the schemes
+are not copies of any livery, and no airline made or endorsed them. The airline is read from
+the flight's callsign; nothing else about the airline is shown.
 
 ## Vessel models
 
