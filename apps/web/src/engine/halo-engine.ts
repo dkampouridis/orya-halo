@@ -1521,6 +1521,10 @@ export class HaloEngineImpl implements HaloEngine {
       const style = MOVERS[kind];
       const def = layerForKind(kind);
       if (!batch || !style || batch.count === 0 || !this.visible[def.id]) continue;
+      // In the 3D view the camera looks along the horizon, where thousands of
+      // satellites line up as flat glyphs and fill the sky. They return with
+      // the ordinary view; the layer stays on.
+      if (this.chasing && kind === EntityKind.Satellite) continue;
       layers.push(
         new MoversLayer({
           id: `movers-${def.id}`,
