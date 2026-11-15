@@ -141,7 +141,7 @@ try {
     const e = globalThis.__halo.engine;
     globalThis.__lostCanvas = e.overlay.getCanvas();
     globalThis.__statuses = [];
-    e.onStatus((s) => globalThis.__statuses.push(s.graphics));
+    e.on("status", (s) => globalThis.__statuses.push(s.graphics));
     globalThis.__lostCanvas.getContext("webgl2").getExtension("WEBGL_lose_context").loseContext();
   });
   await page.waitForTimeout(2500);
