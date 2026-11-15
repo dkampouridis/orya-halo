@@ -141,12 +141,13 @@ export function satelliteSnapshotUrl(assetBase: string): string {
 /**
  * Satellites. With a gateway, elements come from its shared CelesTrak cache,
  * so every visitor behind one address costs CelesTrak one download per
- * update between them; without one, from CelesTrak directly. Either way the
+ * update between them; without one (or with `satelliteSource: "direct"`, for a
+ * gateway whose host cannot reach CelesTrak), from CelesTrak directly. Either way the
  * bundled snapshot stands in whenever current elements cannot be had.
  */
 export function satellites(config: DataConfig): SourcePlugin {
   const fallbackUrl = satelliteSnapshotUrl(config.assetBase);
-  if (!config.gatewayUrl) {
+  if (!config.gatewayUrl || config.satelliteSource === "direct") {
     return createCelestrakSource({ url: CELESTRAK_GP_URL, fallbackUrl }) as SourcePlugin;
   }
   const proxied = createCelestrakSource({

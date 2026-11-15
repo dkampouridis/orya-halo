@@ -16,6 +16,11 @@ services:
     dockerfilePath: ./Dockerfile
     dockerContext: .
     healthCheckPath: /health
+    # Only gateway changes rebuild and restart it; web-only commits do not.
+    buildFilter:
+      paths:
+        - apps/gateway/**
+        - render.yaml
     envVars:
       # Render routes requests through Cloudflare, which sets True-Client-IP.
       - key: TRUST_PROXY

@@ -229,6 +229,31 @@ ADSBLOL_BUDGET_FILE = "/data/adsb-lol-budget.json"
 The image runs as a non-root user; check after the first deploy that it can write to the volume
 (no "could not be saved" warning in `fly logs`).
 
+### Render (free)
+
+This is how the public demo runs. `render.yaml` at the repository root is a Render blueprint
+for the gateway on the free plan: open
+`https://render.com/deploy?repo=<your repository URL>`, enter `FIRMS_MAP_KEY` and
+`AISSTREAM_API_KEY` when asked (both optional), and apply it. The first build compiles the
+gateway and takes 10 to 15 minutes. Pushes that touch `apps/gateway` redeploy it.
+
+What the free plan means in practice:
+
+- It sleeps after 15 minutes without visitors and takes about a minute to wake. Meanwhile
+  aircraft and ships show as reconnecting, then fill in.
+- Its disk is wiped on every restart, so the blueprint sets `ADSBLOL_FIRST_BURST=false`:
+  each start begins with an empty adsb.lol budget, and frequent restarts can never add up to
+  more than 500 requests a day. Aircraft appear a few minutes after a wake.
+- Requests reach it through Cloudflare, so `CLIENT_IP_HEADER=true-client-ip` gives the
+  per-address limit the visitor's real address.
+- In our tests CelesTrak could not be reached from Render. Build the web app with
+  `VITE_SATELLITE_SOURCE=direct` so browsers fetch satellite elements themselves.
+- 750 free instance hours a month are shared by every free service in the workspace; one
+  service running all month uses at most 744.
+
+Point the web app at it with `VITE_GATEWAY_URL=wss://<service>.onrender.com` and set
+`ALLOWED_ORIGINS` in `render.yaml` to your site's address.
+
 ### A small VPS with systemd
 
 Build the binary on the server, or on a machine with the same operating system and

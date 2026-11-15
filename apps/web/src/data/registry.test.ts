@@ -113,6 +113,19 @@ describe("satellites", () => {
     ]);
   });
 
+  test("satelliteSource direct skips the gateway's cache", async () => {
+    const plugin = satellitePlugin({
+      gatewayUrl: "wss://gateway.example/",
+      satelliteSource: "direct",
+    });
+    const ctx = context(() => new Response(csv));
+    await plugin.fetch?.(ctx);
+    expect(ctx.requests).toEqual([
+      "https://celestrak.org/NORAD/elements/gp.php?GROUP=active&FORMAT=CSV",
+    ]);
+    expect(plugin.cacheTtl).toBe(3 * 3_600_000);
+  });
+
   test("either way the bundled snapshot is the fallback", async () => {
     for (const gatewayUrl of ["ws://localhost:8787", null]) {
       for (const assetBase of ["https://halo.example/", "https://halo.example/app"]) {

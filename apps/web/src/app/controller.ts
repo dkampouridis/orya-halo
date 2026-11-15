@@ -41,9 +41,21 @@ const DETAIL_REFRESH_MS = 2_000;
  * on the map; the full wording lives on the attribution page. Sources not
  * listed fall back to their provider name.
  */
+/**
+ * Short on-map credits by source id. Plugin ids and, while a gateway is
+ * connected, its upstreams (`gateway-` plus the id in `/v1/attribution`). An empty
+ * text means no credit is required (route data is CC0).
+ */
 const MAP_CREDITS: Record<string, string> = {
   "gateway-aircraft": "adsb.lol (ODbL)",
   "gateway-ships": "Fintraffic CC BY 4.0",
+  // The gateway's own upstreams, as the data worker names them.
+  "gateway-adsb-lol": "adsb.lol (ODbL)",
+  "gateway-vrs-standing-data": "",
+  "gateway-digitraffic": "Fintraffic CC BY 4.0",
+  "gateway-aisstream": "AISStream.io",
+  "gateway-nasa-firms": "NASA FIRMS",
+  "gateway-celestrak-gp": "CelesTrak",
   "celestrak-gp": "CelesTrak",
   "usgs-quakes": "USGS",
   "osm-cables": "© OpenStreetMap",
@@ -250,7 +262,11 @@ export async function startController(container: HTMLElement): Promise<Controlle
     const credits: Attribution[] = [];
     for (const source of sources) {
       const text = MAP_CREDITS[source.id] ?? source.name;
-      if (!layers[source.layer].enabled || seen.has(text)) continue;
+      const layer = layers[source.layer];
+      // Credit what is on screen: a layer that is off, still loading or
+      // offline shows none of the provider's data.
+      const showing = layer.enabled && (layer.status === "live" || layer.status === "degraded");
+      if (!showing || !text || seen.has(text)) continue;
       seen.add(text);
       credits.push({ text, url: source.attributionUrl });
     }

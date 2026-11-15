@@ -35,6 +35,7 @@ export function dataConfig(layers: Record<LayerId, boolean>): DataConfig {
     layers,
     historyMs: 30 * 60_000,
     radarSource: env.VITE_RADAR_SOURCE === "imerg" ? "imerg" : "rainviewer",
+    satelliteSource: env.VITE_SATELLITE_SOURCE === "direct" ? "direct" : "gateway",
     synthetic: synthetic || undefined,
   };
 }

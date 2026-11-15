@@ -352,7 +352,7 @@ export class GatewayClient {
       case UpstreamStatus.Degraded:
         return {
           status: "degraded",
-          message: `${layerSubject(layer, "are", "is")} arriving late or incomplete. The provider is having trouble.`,
+          message: `${layerSubject(layer, "are", "is")} updating slowly or incompletely right now.`,
           total,
           updatedMs,
         };

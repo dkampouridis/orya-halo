@@ -390,7 +390,7 @@ describe("gateway client", () => {
     await vi.advanceTimersByTimeAsync(1100);
     expect(h.layer("aircraft")).toMatchObject({
       status: "degraded",
-      message: "Aircraft are arriving late or incomplete. The provider is having trouble.",
+      message: "Aircraft are updating slowly or incompletely right now.",
     });
     expect(h.layer("ships")).toMatchObject({
       status: "offline",

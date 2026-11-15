@@ -179,6 +179,12 @@ export interface DataConfig {
   historyMs: number;
   /** Which provider feeds the rain layer. RainViewer is real radar; IMERG is fully open but hours behind. */
   radarSource?: "rainviewer" | "imerg";
+  /**
+   * Where satellite elements come from when a gateway is configured: its shared
+   * CelesTrak cache (the default), or CelesTrak directly from each browser, for
+   * gateways on hosts that cannot reach CelesTrak. Without a gateway, always direct.
+   */
+  satelliteSource?: "gateway" | "direct";
   /** Add this many synthetic movers per gateway layer, for load testing. */
   synthetic?: number;
 }
