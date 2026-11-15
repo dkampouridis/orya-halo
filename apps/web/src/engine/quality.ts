@@ -25,6 +25,8 @@ export interface QualitySettings {
    * glyphs: at most this many, nearest the middle of the view first. 0 keeps glyphs.
    */
   aircraftModels: number;
+  /** The same for ships, from a closer zoom. */
+  shipModels: number;
 }
 
 export const QUALITY: Record<QualityTier, QualitySettings> = {
@@ -39,6 +41,7 @@ export const QUALITY: Record<QualityTier, QualitySettings> = {
     farThin: 0,
     mapFadeMs: 200,
     aircraftModels: 3000,
+    shipModels: 1500,
   },
   balanced: {
     maxPixelRatio: 1.5,
@@ -51,6 +54,7 @@ export const QUALITY: Record<QualityTier, QualitySettings> = {
     farThin: 0,
     mapFadeMs: 200,
     aircraftModels: 800,
+    shipModels: 500,
   },
   // For integrated graphics and phones: one canvas pixel per CSS pixel, bare
   // glyphs on small quads, half the points of a far view, a third of the
@@ -66,6 +70,7 @@ export const QUALITY: Record<QualityTier, QualitySettings> = {
     farThin: 0.5,
     mapFadeMs: 0,
     aircraftModels: 0,
+    shipModels: 0,
   },
 };
 

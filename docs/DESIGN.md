@@ -91,8 +91,32 @@ climbs and descents, and are drawn larger than life (a 40 m airliner 26 px long 
 true. At most 3,000 are drawn (800 on the balanced tier, none on the cheapest), nearest the
 middle of the view first.
 
-**3D view** (V, or the button in an aircraft's detail panel) rides behind the selected
-aircraft: the camera sits about four and a half aircraft-lengths behind and above it, turned
+Closer in (zoom 7.5 to 8.5) ships turn from glyphs into 3D models of their kinds in the same
+way. AIS gives a category, sometimes a finer type (tug, pilot vessel, law enforcement, sailing),
+a name, a length and a beam; `vesselModelFor` (`packages/schema/src/vessel-types.ts`) picks one
+of 14 hull forms from them. A cargo ship's form comes from its name where the fleet's naming is
+unambiguous (a container line's prefix, NYK's "… LEADER" car carriers), else from its
+proportions: under 110 m a general cargo ship, a length over beam of 7.6 or more (or longer than
+330 m and wider than 45 m) a container ship, otherwise a bulk carrier. That last rule is a
+guess: AIS does not tell container ships from bulk carriers. Passenger ships of 230 m and more
+are cruise ships, smaller ones ferries. Each model (`packages/layers/src/vessels/vessel-mesh.ts`)
+is a smooth hull with a flared, raked bow and a transom, and boxes for deckhouses, funnels,
+containers, hatch covers and cranes, built at the type's typical size and stretched to the
+ship's own length and beam. Each vertex says what part it is on, and the shader paints hull
+bands, a coast guard's bow stripe, window rows and balconies, funnel tops and every container a
+colour of its own. The colours (`packages/schema/src/vessel-schemes.ts`) are by type (tankers
+red-brown, bulk carriers black, cruise ships white), by role (coast guard white with a red bow
+stripe, search and rescue orange, naval grey, research white) or, where the name identifies the
+operator, a few flat colours of the line: Maersk's light blue, MSC's black hull and yellow
+funnel, Evergreen's green, ONE's magenta, and so on, with most of their containers in the line's
+colour. A ship's batch value packs its length (2 m steps), beam, model and scheme into one exact
+float32 (`shipValue`); the glyph keeps its length byte and the model is copied into the fourth
+style byte. A model is drawn exactly as long as the glyph it replaces until true size is larger,
+so the cross-fade shows no jump. At most 1,500 are drawn (500 on the balanced tier, none on the
+cheapest), nearest the middle of the view first.
+
+**3D view** (V, or the button in an aircraft's or ship's detail panel) rides behind the selected
+aircraft or ship: the camera sits about four and a half aircraft-lengths behind and above it, turned
 22 degrees off its track for a three-quarter view, looking down at 76 degrees, so the horizon
 and sky are in the frame. The wheel moves the camera nearer or further (up to 50 times the
 starting distance; far back, the other aircraft are enlarged again so they can be seen), and

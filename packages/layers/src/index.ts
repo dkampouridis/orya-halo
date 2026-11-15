@@ -28,3 +28,12 @@ export {
 export type { AircraftModelsLayerProps } from "./aircraft/aircraft-models-layer.ts";
 export { buildAircraftMesh } from "./aircraft/aircraft-mesh.ts";
 export type { AircraftMesh } from "./aircraft/aircraft-mesh.ts";
+export {
+  ShipModelsLayer,
+  prepareVesselMeshes,
+  shipModelOf,
+  warmShipModelsLayer,
+} from "./vessels/ship-models-layer.ts";
+export type { ShipModelsLayerProps } from "./vessels/ship-models-layer.ts";
+export { buildVesselMesh } from "./vessels/vessel-mesh.ts";
+export type { VesselMesh } from "./vessels/vessel-mesh.ts";

@@ -20,6 +20,7 @@ import {
   batchTransferables,
   layerDef,
   layerForKind,
+  shipValueFor,
 } from "@orya-halo/schema";
 import type {
   Attribution,
@@ -856,11 +857,35 @@ export class DataRuntime implements DataWorkerApi {
       state.pendingMeta.set(id, meta);
       return;
     }
-    if (state.store.kind === EntityKind.Ship && meta.lengthM !== undefined) {
-      // Gateway frames carry no `value`; a ship's is its length.
-      const length = Number(meta.lengthM);
-      if (Number.isFinite(length)) state.store.setValue(id, length);
-      if (state.store.changed) this.scheduleBatch(state);
+    if (
+      state.store.kind === EntityKind.Ship &&
+      (meta.lengthM !== undefined ||
+        meta.widthM !== undefined ||
+        meta.label !== undefined ||
+        meta.typeName !== undefined)
+    ) {
+      // Gateway frames carry no `value`; a ship's is its length and beam,
+      // the 3D model of its kind and its colours, from all it has told us so far.
+      const store = state.store;
+      const at = store.indexOf(id);
+      const merged = store.meta[at] ?? meta;
+      const number = (x: unknown): number => {
+        const n = Number(x);
+        return Number.isFinite(n) && n > 0 ? n : 0;
+      };
+      const text = (x: unknown): string | null =>
+        typeof x === "string" ? x : typeof x === "number" ? String(x) : null;
+      store.setValue(
+        id,
+        shipValueFor({
+          category: at === -1 ? 0 : store.category[at],
+          typeName: text(merged.typeName),
+          name: text(merged.label),
+          lengthM: number(merged.lengthM),
+          beamM: number(merged.widthM),
+        }),
+      );
+      if (store.changed) this.scheduleBatch(state);
     } else if (
       state.store.kind === EntityKind.Aircraft &&
       (meta.typeCode !== undefined || meta.label !== undefined)

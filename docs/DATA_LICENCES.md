@@ -69,6 +69,25 @@ impression of how its aircraft look from a distance. No logo, name, emblem, type
 is drawn, the schemes are not copies of any livery, and no airline made or endorsed them. The
 airline is read from the flight's callsign; nothing else about the airline is shown.
 
+## Vessel models
+
+The 3D ships are generic hull forms generated in code (`packages/layers/src/vessels/vessel-mesh.ts`),
+one per kind of vessel (container ship, tanker, bulk carrier, car carrier, cruise ship, ferry,
+general cargo ship, fishing vessel, tug, pilot boat, patrol vessel, sailing and motor yachts,
+and a generic workboat), stretched to each ship's length and beam as its AIS static data reports
+them. They are no particular ship or design, and no third-party 3D model is used.
+
+They are painted in simplified colour schemes (`packages/schema/src/vessel-schemes.ts`): colours
+by type of vessel, a few for roles (coast guard, search and rescue, naval grey, research), and
+for some container lines, car carriers, cruise lines and ferry operators a few flat colours
+(hull, superstructure, funnel, the share of containers in the line's colour), chosen by eye as
+an impression of how their ships look from a distance. No logo, name, emblem, typeface, hull
+lettering or artwork is drawn, the schemes are not copies of any livery, and no operator made or
+endorsed them. The operator is read from the ship's broadcast name, and only where a fleet's
+naming identifies it beyond doubt ("MAERSK …", "MSC …", "EVER …", "… OF THE SEAS"), and only for
+the kind of ship that fleet sails (an "MSC …" tanker gets a tanker's colours). Lines whose ship
+names do not say who operates them, such as Hapag-Lloyd, are left in the colours of the type.
+
 ## Share-alike
 
 `apps/web/public/data/cables.bin` and the base map extract are databases derived from

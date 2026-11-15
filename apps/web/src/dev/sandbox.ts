@@ -13,7 +13,7 @@
  *   layers=aircraft,ships,...        only these layers on; layers=all for every data layer
  *                                    (default: the layers the app starts with)
  *   select=aircraft                  select the object of that layer nearest the view centre
- *   follow=1, orbit=1, chase=1 (the 3D view behind a selected aircraft)
+ *   follow=1, orbit=1, chase=1 (the 3D view behind a selected aircraft or ship)
  *   pad=top,right,bottom,left        camera padding in CSS pixels, as the HUD would set it
  *   credits=long   several long credits, to see the credit line wrap (default: one short one)
  *   overlay=radar  an animated raster overlay with thirteen frames; its tiles come from a
@@ -23,6 +23,11 @@
  *                  all heading north-east, in place of the synthetic aircraft
  *                  (modelgrid=bank adds a 25-degree bank and a climb to every other one;
  *                  modelgrid=liveries is every airline colour scheme, all on the A320)
+ *   shipgrid=1     every 3D vessel model in its type's colours, in rows at the starting camera,
+ *                  all heading north-east, in place of the synthetic ships
+ *                  (shipgrid=schemes is every vessel colour scheme, each on its fleet's model)
+ *   cluster=1.5    every synthetic ship within that many degrees of the starting camera, to time
+ *                  a crowded coast (positions are re-placed on every batch)
  *
  * Keys: 1-0 toggle layers, F follow, O orbit, Q cycle quality, M reduced motion, L live/scrub.
  * `window.__halo` exposes the engine and frame statistics for scripts/shot.mjs.
@@ -35,6 +40,11 @@ import {
   EntityKind,
   LAYERS,
   LAYER_IDS,
+  VESSEL_MODELS,
+  VESSEL_SCHEMES,
+  shipValue,
+  vesselModel,
+  vesselSchemeModel,
   layerDef,
   layerForKind,
 } from "@orya-halo/schema";
@@ -217,6 +227,8 @@ async function main(): Promise<void> {
 
   const latest = new Map<EntityKind, RenderBatch>();
   const gridMode = params.get("modelgrid");
+  const shipGridMode = params.get("shipgrid");
+  const cluster = num("cluster", 0);
   const push = (): void => {
     for (const batch of world.batches(worldNow())) {
       if (gridMode && batch.kind === EntityKind.Aircraft) {
@@ -226,6 +238,15 @@ async function main(): Promise<void> {
         engine.setBatch(grid);
         continue;
       }
+      if (shipGridMode && batch.kind === EntityKind.Ship) {
+        const grid = shipGrid(num("lon", 0), num("lat", 0), worldNow(), shipGridMode);
+        latest.set(grid.kind, grid);
+        stats.counts.ships = grid.count;
+        engine.setBatch(grid);
+        continue;
+      }
+      if (cluster > 0 && batch.kind === EntityKind.Ship)
+        clusterShips(batch, num("lon", 0), num("lat", 0), cluster);
       latest.set(batch.kind, batch);
       stats.counts[layerForKind(batch.kind).id] = batch.count;
       engine.setBatch(batch);
@@ -309,7 +330,7 @@ async function main(): Promise<void> {
     }
   }
   engine.setFollowing(following);
-  // chase=1: the 3D view behind the selected aircraft (needs select=aircraft).
+  // chase=1: the 3D view behind the selected aircraft or ship (needs select=aircraft or ships).
   if (params.get("chase") === "1") engine.setChase(true);
   engine.setOrbiting(orbiting);
 
@@ -384,6 +405,63 @@ main().catch((error) => {
   const readout = document.getElementById("stats");
   if (readout) readout.textContent = `Engine failed to start: ${String(error)}`;
 });
+
+/** Move every ship to a stable place within `spread` degrees of (lon, lat), with nothing to ease. */
+function clusterShips(batch: RenderBatch, lon: number, lat: number, spread: number): void {
+  for (let i = 0; i < batch.count; i++) {
+    const h = Math.imul(batch.ids[i], 2654435761) >>> 0;
+    const u = (h & 0xffff) / 0xffff - 0.5;
+    const v = (h >>> 16) / 0xffff - 0.5;
+    batch.positions[i * 3] = lon + (2 * u * spread) / Math.cos((lat * Math.PI) / 180);
+    batch.positions[i * 3 + 1] = lat + 2 * v * spread;
+    batch.blend[i * 3] = 0;
+    batch.blend[i * 3 + 1] = 0;
+    batch.blend[i * 3 + 2] = -1e6;
+  }
+}
+
+/**
+ * Every vessel model once in its type's colours (or, for "schemes", every
+ * colour scheme on the model of its fleet), in rows of five 450 m apart
+ * around (lon, lat), heading 45 degrees, standing still.
+ */
+function shipGrid(lon: number, lat: number, nowMs: number, mode: string): RenderBatch {
+  const looks =
+    mode === "schemes"
+      ? VESSEL_SCHEMES.filter((s) => s.name !== "Spare").map((s) => ({
+          model: vesselSchemeModel(s.id),
+          scheme: s.id,
+        }))
+      : VESSEL_MODELS.map((m) => ({ model: m.id, scheme: 0 }));
+  const n = looks.length;
+  const rows = Math.ceil(n / 5);
+  const batch = createRenderBatch(EntityKind.Ship, n, nowMs, 1);
+  const metresPerDegLat = 111_320;
+  const metresPerDegLon = 111_320 * Math.cos((lat * Math.PI) / 180);
+  for (let i = 0; i < n; i++) {
+    const col = i % 5;
+    const row = Math.floor(i / 5);
+    const spec = vesselModel(looks[i].model);
+    const lengthM = spec?.lengthM ?? 60;
+    batch.ids[i] = 800_000 + i;
+    batch.positions[i * 3] = lon + ((col - 2) * 450) / metresPerDegLon;
+    batch.positions[i * 3 + 1] = lat + (((rows - 1) / 2 - row) * 450) / metresPerDegLat;
+    batch.motion[i * 4] = 45;
+    // A centimetre a second: still to the eye, but moving, so select=ships can pick one.
+    batch.motion[i * 4 + 1] = 0.01;
+    batch.blend[i * 3 + 2] = -1e6;
+    batch.style[i * 4] = 1;
+    batch.style[i * 4 + 2] = Math.min(255, Math.round((lengthM / 400) * 255));
+    batch.style[i * 4 + 3] = looks[i].model;
+    batch.values[i] = shipValue({
+      lengthM,
+      beamM: spec?.beamM ?? 12,
+      model: looks[i].model,
+      scheme: looks[i].scheme,
+    });
+  }
+  return batch;
+}
 
 /**
  * Every aircraft model once (or, for "liveries", every colour scheme on the

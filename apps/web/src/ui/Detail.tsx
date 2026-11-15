@@ -288,7 +288,7 @@ function Actions({ detail }: { detail: EntityDetail }) {
 
   return (
     <div className="actions">
-      {detail.layer === "aircraft" ? (
+      {detail.layer === "aircraft" || detail.layer === "ships" ? (
         <button
           type="button"
           className="btn actions-wide"

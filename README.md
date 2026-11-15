@@ -38,7 +38,11 @@ The screenshots were taken with generated test traffic, not live positions.
 
 From a country away, aircraft are drawn as 3D models of their real types (an A320, a 777, an ATR 72, a
 Cessna, a helicopter), built from published dimensions and painted in simplified airline colour
-schemes picked by callsign, and the 3D view rides behind one.
+schemes picked by callsign. Closer in, ships are drawn as 3D models of their kinds (container
+ships with their stacks of boxes, tankers, bulk carriers, cruise ships, tugs, yachts and more),
+sized by their AIS length and beam and painted by type or, where the name identifies the line,
+in simplified colours of the big container and cruise lines. The 3D view rides behind an aircraft
+or a ship.
 
 Every source was checked for terms that allow public display. The full table, with licences,
 rate limits and the exact credit each provider asks for, is in
