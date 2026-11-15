@@ -30,7 +30,17 @@ describe("airline colour schemes", () => {
 
   test("colours are #rrggbb and the numbers are in range", () => {
     for (const l of AIRCRAFT_LIVERIES) {
-      for (const c of [l.top, l.belly, l.tail, l.engines, l.accent?.color, l.nose, l.rear?.color]) {
+      for (const c of [
+        l.top,
+        l.belly,
+        l.tail,
+        l.engines,
+        l.accent?.color,
+        l.nose,
+        l.rear?.color,
+        l.stripe?.color,
+        l.mark,
+      ]) {
         if (c !== undefined) expect(c).toMatch(/^#[0-9a-f]{6}$/);
       }
       if (l.bellyLine !== undefined) {
@@ -42,9 +52,19 @@ describe("airline colour schemes", () => {
         expect(l.accent.split).toBeLessThan(1);
       }
       if (l.rear) {
-        // Past the tail cone, and well short of the nose: it is the fin's colour carried forward.
-        expect(l.rear.to).toBeGreaterThan(0);
+        // Shares of the length from the tail: past the tail cone (about the last
+        // quarter), and well short of the nose: it is the fin's colour carried forward.
+        expect(l.rear.to).toBeGreaterThan(0.2);
         expect(l.rear.to).toBeLessThan(0.5);
+        expect(l.rear.from ?? 0).toBeGreaterThanOrEqual(0);
+        expect(l.rear.from ?? 0).toBeLessThan(l.rear.to);
+        expect(Math.abs(l.rear.above ?? -1)).toBeLessThanOrEqual(1);
+      }
+      if (l.stripe) {
+        expect(l.stripe.lo).toBeLessThan(l.stripe.hi);
+        expect(Math.abs(l.stripe.lo)).toBeLessThanOrEqual(1);
+        expect(Math.abs(l.stripe.hi)).toBeLessThanOrEqual(1);
+        expect(l.stripe.from ?? 0.25).toBeLessThan(l.stripe.to ?? 0.9);
       }
     }
   });
@@ -66,6 +86,10 @@ describe("airline colour schemes", () => {
     // A white fin: its second colour. A grey one: the engines.
     expect(liveryMark(byName("Air France"))).toBe("#002157");
     expect(liveryMark(byName("Vueling"))).toBe("#ffcc00");
+    // A scheme's own mark comes first.
+    expect(liveryMark(byName("VistaJet"))).toBe("#d6001c");
+    // A white fin with a coloured part: that part.
+    expect(liveryMark(byName("Norwegian"))).toBe("#d81939");
     // Only white, grey and black: no mark.
     expect(liveryMark(byName("Air Canada"))).toBeNull();
     expect(liveryMark(NEUTRAL_LIVERY)).toBeNull();
@@ -73,8 +97,24 @@ describe("airline colour schemes", () => {
     for (const l of AIRCRAFT_LIVERIES.slice(1)) {
       const mark = liveryMark(l);
       if (mark)
-        expect([l.top, l.tail, l.accent?.color, l.rear?.color, l.belly, l.engines]).toContain(mark);
+        expect([
+          l.mark,
+          l.top,
+          l.tail,
+          l.accent?.color,
+          l.rear?.color,
+          l.stripe?.color,
+          l.belly,
+          l.engines,
+        ]).toContain(mark);
     }
+  });
+
+  test("no two airlines share a scheme colour for colour", () => {
+    const key = (l: (typeof AIRCRAFT_LIVERIES)[number]) =>
+      JSON.stringify({ ...l, id: 0, name: "", codes: [] });
+    const keys = AIRCRAFT_LIVERIES.map(key);
+    expect(new Set(keys).size).toBe(keys.length);
   });
 
   test("the airline comes from a flight callsign", () => {

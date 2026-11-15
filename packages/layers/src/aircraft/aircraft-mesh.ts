@@ -24,7 +24,8 @@ import type { AircraftModelSpec } from "@orya-halo/schema";
  * - fuselages: `colors` = [part, sine of the angle round from the side (-1
  *   keel, 1 top), distance from the nose / fuselage height]; `texCoords.x` =
  *   0 where the tail cone ends, 1 where the nose cone begins (a helicopter's
- *   cabin: 0 at its rear, 1 at the nose).
+ *   cabin: 0 at its rear, 1 at the nose); `texCoords.y` = share of its
+ *   length from the tail, 0 at the tip of the tail cone and 1 at the nose.
  * - fins: `colors` = [part, height from root (0) to tip (1), chord from
  *   leading (0) to trailing edge (1)].
  * - other parts: [part, 0, 0].
@@ -61,9 +62,9 @@ export interface AircraftMesh {
 }
 
 type V3 = [number, number, number];
-/** Where a vertex is on its part: the two place values of `colors`, then `texCoords.x`. */
-type Tag = readonly [number, number, number];
-const NO_TAG: Tag = [0, 0, 0];
+/** Where a vertex is on its part: the two place values of `colors`, then `texCoords`. */
+type Tag = readonly [number, number, number, number];
+const NO_TAG: Tag = [0, 0, 0, 0];
 
 const DEG = Math.PI / 180;
 
@@ -77,7 +78,7 @@ class MeshBuilder {
 
   private tagVertex(t: Tag): void {
     this.colors.push(this.part, t[0], t[1]);
-    this.texCoords.push(t[2], 0);
+    this.texCoords.push(t[2], t[3]);
   }
 
   /**
@@ -121,13 +122,11 @@ class MeshBuilder {
     tag: (k: number) => Tag,
   ): void {
     const c: V3 = [0, 0, 0];
-    const t: [number, number, number] = [0, 0, 0];
+    const t: [number, number, number, number] = [0, 0, 0, 0];
     ring.forEach((v, k) => {
       const tk = tag(k);
-      for (let i = 0; i < 3; i++) {
-        c[i] += v[i] / n;
-        t[i] += tk[i] / n;
-      }
+      for (let i = 0; i < 3; i++) c[i] += v[i] / n;
+      for (let i = 0; i < 4; i++) t[i] += tk[i] / n;
     });
     const centre = this.positions.length / 3;
     this.positions.push(c[0], c[1], c[2]);
@@ -357,7 +356,7 @@ function fin(
     [section(xLe, zRoot, rootChord), section(tipLe, zRoot + height, tipChord)],
     true,
     true,
-    (r, k) => [r, chordAt[k], 0],
+    (r, k) => [r, chordAt[k], 0, 0],
   );
   m.part = part;
   return { tipLe, tipZ: zRoot + height, tipChord };
@@ -465,7 +464,7 @@ export function buildAircraftMesh(spec: AircraftModelSpec): AircraftMesh {
   m.part = short ? MeshPart.LightFuselage : MeshPart.Fuselage;
   m.loft(rings, true, true, (i, k) => {
     const u = i / N;
-    return [sines[k], ((1 - u) * L) / H, (u - tailShare) / cabin];
+    return [sines[k], ((1 - u) * L) / H, (u - tailShare) / cabin, u];
   });
   m.part = MeshPart.Wing;
 
@@ -613,7 +612,7 @@ function buildHelicopter(spec: AircraftModelSpec): AircraftMesh {
   const heliSines: number[] = [];
   for (let k = 0; k < 14; k++) heliSines.push(Math.sin((k / 14) * Math.PI * 2));
   m.part = MeshPart.Rotorcraft;
-  m.loft(rings, true, true, (i, k) => [heliSines[k], 0, i / N]);
+  m.loft(rings, true, true, (i, k) => [heliSines[k], 0, i / N, i / N]);
   // Tail boom to the back, with a small fin and tailplane.
   const boomR = W * 0.11;
   const boomLength = cabinStart + L / 2 + boomR;
