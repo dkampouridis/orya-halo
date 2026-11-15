@@ -1,4 +1,4 @@
-import { BLEND_SECONDS, EARTH_RADIUS_M } from "@orya-halo/schema";
+import { AIRCRAFT_LIVERIES, BLEND_SECONDS, EARTH_RADIUS_M, liveryMark } from "@orya-halo/schema";
 import type { ShaderModule } from "@luma.gl/shadertools";
 import { haloCommonVS, haloShapesFS } from "../shaders/common.glsl.ts";
 
@@ -124,6 +124,31 @@ export const GLYPH_SCALE = {
 const glslArray = (values: readonly number[]): string =>
   `float[${values.length}](${values.map((v) => v.toFixed(3)).join(", ")})`;
 
+/** An airline's mark is drawn at least this bright (its largest channel, 0..1), to show on a dark map. */
+const MARK_BRIGHTNESS = 0.82;
+
+/**
+ * The colour an aircraft glyph's tail is painted in, by airline colour scheme
+ * id (the aircraft's third style byte): the scheme's `liveryMark`, brightened
+ * if dark so its hue shows on a few pixels over the night side. Null where
+ * the scheme has no such colour (and for id 0, an unknown airline): those
+ * tails stay the layer's colour.
+ */
+export const AIRLINE_MARKS: readonly ([number, number, number] | null)[] = AIRCRAFT_LIVERIES.map(
+  (livery) => {
+    const hex = livery.id === 0 ? null : liveryMark(livery);
+    if (!hex) return null;
+    const n = Number.parseInt(hex.slice(1), 16);
+    const c = [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
+    const k = Math.max(1, MARK_BRIGHTNESS / Math.max(...c));
+    return [c[0] * k, c[1] * k, c[2] * k];
+  },
+);
+
+const markTable = `vec4[${AIRLINE_MARKS.length}](${AIRLINE_MARKS.map((m) =>
+  m ? `vec4(${m.map((v) => v.toFixed(3)).join(", ")}, 1.0)` : "vec4(0.0)",
+).join(", ")})`;
+
 /**
  * How large one object's silhouette is drawn, as a share of its layer's size,
  * from its render style bytes: the category, and for ships the length byte
@@ -186,6 +211,7 @@ flat out vec4 vTint;
 flat out float vPixel;
 flat out vec3 vFlags;
 flat out vec2 vShape;
+flat out vec4 vMark;
 
 const float DEG = 0.017453292519943295;
 const float EARTH_RADIUS_M = ${EARTH_RADIUS_M.toFixed(1)};
@@ -201,6 +227,8 @@ const float SHIP_SCALE[10] = ${glslArray(GLYPH_SCALE.ship)};
 const float SATELLITE_SCALE[8] = ${glslArray(GLYPH_SCALE.satellite)};
 // A ship drawn at its true length stops growing here, so a quad never covers the screen.
 const float TRUE_SCALE_MAX_PX = 360.0;
+// An aircraft's airline colour by scheme id (style.z): see AIRLINE_MARKS. Alpha 0: none.
+const vec4 AIRLINE_MARK[${AIRLINE_MARKS.length}] = ${markTable};
 
 ${haloCommonVS}
 
@@ -338,6 +366,14 @@ void main(void) {
   vFlags = vec3(hasHeading ? 1.0 : 0.0, emergency ? 1.0 : 0.0, pointPx);
   // Moored ships and aircraft on the ground are drawn as outlines.
   vShape = vec2(category, stationary && movers.glyph < 1.5 ? 1.0 : 0.0);
+  // An aircraft's airline colour, for its tail; none on a mark with no heading
+  // or a ground vehicle's dot, nor on a glyph too small to have a tail.
+  vMark = vec4(0.0);
+  if (movers.glyph < 0.5 && hasHeading && cat != 9) {
+    int livery = int(instanceStyle.z + 0.5);
+    if (livery > 0 && livery < ${AIRLINE_MARKS.length}) vMark = AIRLINE_MARK[livery];
+    vMark.a *= smoothstep(2.0, 3.5, size);
+  }
 
   gl_Position = clip0;
   DECKGL_FILTER_GL_POSITION(gl_Position, geometry);
@@ -383,8 +419,12 @@ flat in vec4 vTint;
 flat in float vPixel;
 flat in vec3 vFlags;
 flat in vec2 vShape;
+flat in vec4 vMark;
 
 out vec4 fragColor;
+
+// An aircraft's tail, behind the wings, is painted in its airline's colour.
+const float MARK_FROM = -0.42;
 
 ${haloShapesFS}
 
@@ -461,8 +501,13 @@ void main(void) {
     float rim = max(core - inner, 0.0);
     float part = (1.0 - smoothstep(-aa, aa, detail)) * inner;
     float body = vShape.y > 0.5 ? 0.1 : 0.36;
+    // The airline's colour on the tail, drawn solid so a few pixels of it show
+    // (on the ground, only in the rim: a parked aircraft stays an outline).
+    float mark = vMark.a * (1.0 - smoothstep(-aa, aa, p.x - MARK_FROM));
+    part = max(part, mark * inner * (1.0 - vShape.y));
     float fill = mix(1.0, mix(body, 0.88, part), open);
-    vec3 rimRgb = mix(base, vec3(1.0), 0.3 * open);
+    vec3 rimRgb = mix(mix(base, vec3(1.0), 0.3 * open), vMark.rgb, mark);
+    vec3 fillRgb = mix(base, vMark.rgb, mark);
 
     // Comet tail behind the glyph: tapers and fades towards its end.
     float tail = 0.0;
@@ -474,7 +519,8 @@ void main(void) {
     }
 
     float tailOnly = tail * (1.0 - core);
-    vec3 rgb = (rimRgb * rim + base * inner * fill + base * glow * 0.42) * movers.body + base * tailOnly;
+    // (The glow stays off the airline's colour, which it would turn towards the layer's.)
+    vec3 rgb = (rimRgb * rim + fillRgb * inner * fill + base * glow * 0.42 * (1.0 - mark * core)) * movers.body + base * tailOnly;
     float alpha = (rim + inner * fill) * movers.body + tailOnly * 0.8;
 
     if (vFlags.y > 0.5) {
