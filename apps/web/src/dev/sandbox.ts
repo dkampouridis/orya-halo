@@ -22,7 +22,8 @@
  *   modelgrid=1    every 3D aircraft model in a row-by-row grid at the starting camera,
  *                  all heading north-east, in place of the synthetic aircraft
  *                  (modelgrid=bank adds a 25-degree bank and a climb to every other one;
- *                  modelgrid=liveries is every airline colour scheme, all on the A320)
+ *                  modelgrid=liveries is every airline colour scheme, all on the A320;
+ *                  gridm=25000 spaces the grid that many metres apart, for far views)
  *
  * Keys: 1-0 toggle layers, F follow, O orbit, Q cycle quality, M reduced motion, L live/scrub.
  * `window.__halo` exposes the engine and frame statistics for scripts/shot.mjs.
@@ -220,7 +221,13 @@ async function main(): Promise<void> {
   const push = (): void => {
     for (const batch of world.batches(worldNow())) {
       if (gridMode && batch.kind === EntityKind.Aircraft) {
-        const grid = modelGrid(num("lon", 0), num("lat", 0), worldNow(), gridMode);
+        const grid = modelGrid(
+          num("lon", 0),
+          num("lat", 0),
+          worldNow(),
+          gridMode,
+          num("gridm", 900),
+        );
         latest.set(grid.kind, grid);
         stats.counts.aircraft = grid.count;
         engine.setBatch(grid);
@@ -387,10 +394,16 @@ main().catch((error) => {
 
 /**
  * Every aircraft model once (or, for "liveries", every colour scheme on the
- * A320), in rows of seven 900 m apart around (lon, lat), heading 45 degrees
- * at 1,000 m, standing still so the picture is steady.
+ * A320), in rows of seven `spacing` metres apart around (lon, lat), heading
+ * 45 degrees at 1,000 m, standing still so the picture is steady.
  */
-function modelGrid(lon: number, lat: number, nowMs: number, mode: string): RenderBatch {
+function modelGrid(
+  lon: number,
+  lat: number,
+  nowMs: number,
+  mode: string,
+  spacing: number,
+): RenderBatch {
   const bank = mode === "bank";
   const liveries = mode === "liveries";
   const n = liveries ? AIRCRAFT_LIVERIES.length : AIRCRAFT_MODELS.length;
@@ -401,8 +414,8 @@ function modelGrid(lon: number, lat: number, nowMs: number, mode: string): Rende
     const col = i % 7;
     const row = Math.floor(i / 7);
     batch.ids[i] = 900_000 + i;
-    batch.positions[i * 3] = lon + ((col - 3) * 900) / metresPerDegLon;
-    batch.positions[i * 3 + 1] = lat + ((2 - row) * 900) / metresPerDegLat;
+    batch.positions[i * 3] = lon + ((col - 3) * spacing) / metresPerDegLon;
+    batch.positions[i * 3 + 1] = lat + ((2 - row) * spacing) / metresPerDegLat;
     batch.positions[i * 3 + 2] = 1000;
     batch.motion[i * 4] = 45;
     // A centimetre a second: still to the eye, but moving, so select=aircraft can pick one.
