@@ -12,7 +12,8 @@
  * A320 and a Cessna stays small, though never smaller than `minPixels`.
  *
  * Each is painted in its airline's colour scheme (the batch's third style
- * byte, see `aircraft-liveries.ts` in the schema), or a neutral grey.
+ * byte, see `aircraft-liveries.ts` in the schema), or a neutral grey, made
+ * easier to tell apart while it is small (see `livery-mesh-layer.ts`).
  *
  * Positions are worked out on the CPU each frame, so the layer only takes the
  * aircraft near the view (at most `maxModels`, nearest the centre first). The
@@ -34,7 +35,7 @@ import type { RenderBatch } from "@orya-halo/schema";
 import { globeCommon, haloVisibility } from "../maths.ts";
 import { buildAircraftMesh } from "./aircraft-mesh.ts";
 import type { AircraftMesh } from "./aircraft-mesh.ts";
-import { LiveryMeshLayer, createLiveryPalette } from "./livery-mesh-layer.ts";
+import { LiveryMeshLayer, createLiveryPalette, liverySmallness } from "./livery-mesh-layer.ts";
 
 const DEG = Math.PI / 180;
 const G = 9.81;
@@ -87,7 +88,7 @@ interface Placed {
   position: [number, number, number];
   orientation: [number, number, number];
   scale: [number, number, number];
-  /** The colour scheme's row in the palette in red, "selected" in green. */
+  /** The colour scheme's row in the palette in red, "selected" in green, how small it is drawn in blue. */
   color: [number, number, number, number];
 }
 
@@ -234,7 +235,17 @@ export class AircraftModelsLayer extends CompositeLayer<Required<AircraftModelsL
     const indices = chosen >= 0 && !scan.list.includes(chosen) ? [...scan.list, chosen] : scan.list;
 
     // Candidates: on screen (with a margin for the model's size), nearest the centre first.
-    const candidates: { i: number; d: number; lon: number; lat: number; alt: number }[] = [];
+    const candidates: {
+      i: number;
+      d: number;
+      lon: number;
+      lat: number;
+      alt: number;
+      /** Distance from the camera as a share of the view centre's: how much smaller it is drawn. */
+      depth: number;
+    }[] = [];
+    const camera = viewport.cameraPosition;
+    const centreDistance = globe ? centreCameraDistance(viewport, this.common) : 0;
     for (const i of indices) {
       if (i >= batch.count) continue;
       const [lon, lat, alt] = extrapolate(batch, i, timeMs, this.scratch);
@@ -243,14 +254,16 @@ export class AircraftModelsLayer extends CompositeLayer<Required<AircraftModelsL
       if (!(x > -margin && x < width + margin && y > -margin && y < height + margin)) continue;
       // Behind the camera, or on the far side of the globe (which projects onto the screen too).
       if (!(z < 1)) continue;
-      if (
-        globe &&
-        haloVisibility(viewport.cameraPosition, globeCommon(lon, lat, drawnAlt, this.common)) < 0.5
-      )
-        continue;
+      let depth = 1;
+      if (globe) {
+        const p = globeCommon(lon, lat, drawnAlt, this.common);
+        if (haloVisibility(camera, p) < 0.5) continue;
+        const distance = Math.hypot(p[0] - camera[0], p[1] - camera[1], p[2] - camera[2]);
+        if (centreDistance > 0) depth = distance / centreDistance;
+      }
       const dx = x - width / 2;
       const dy = y - height / 2;
-      candidates.push({ i, d: dx * dx + dy * dy, lon, lat, alt: drawnAlt });
+      candidates.push({ i, d: dx * dx + dy * dy, lon, lat, alt: drawnAlt, depth });
     }
     candidates.sort((a, b) => a.d - b.d);
     if (candidates.length > maxModels) candidates.length = maxModels;
@@ -276,6 +289,8 @@ export class AircraftModelsLayer extends CompositeLayer<Required<AircraftModelsL
       const floor = this.props.minPixels / (Math.max(spec.lengthM, spec.spanM) * pixelsPerMeter);
       const selected = selectedId !== null && batch.ids[i] === selectedId;
       const k = Math.max(exaggerate, floor) * (selected ? this.props.selectedScale : 1);
+      // About how long it is on screen: the scale at the view centre, nearer the camera larger.
+      const lengthPx = (Math.max(spec.lengthM, spec.spanM) * pixelsPerMeter * k) / c.depth;
       let list = groups.get(spec.id);
       if (!list) {
         list = [];
@@ -288,7 +303,12 @@ export class AircraftModelsLayer extends CompositeLayer<Required<AircraftModelsL
         // are `-east` and `-north`), so there the yaw is half a turn more.
         orientation: [-clamp(climb, -15, 15), (globe ? 270 : 90) - hdg, clamp(bank, -30, 30)],
         scale: [k, k, k],
-        color: [batch.style[s + 2], selected ? 255 : 0, 0, 255],
+        color: [
+          batch.style[s + 2],
+          selected ? 255 : 0,
+          Math.round(liverySmallness(lengthPx) * 255),
+          255,
+        ],
       });
     }
 
@@ -342,6 +362,15 @@ function measurePixelsPerMeter(viewport: Viewport): number {
   const a = viewport.project([lon, lat, 0]);
   const b = viewport.project([lon + dLon, lat, 0]);
   return Math.hypot(b[0] - a[0], b[1] - a[1]) / 100;
+}
+
+/** Distance from the camera to the ground at the view centre, in globe common units; 0 when off the globe. */
+function centreCameraDistance(viewport: Viewport, out: [number, number, number]): number {
+  const [lon, lat] = viewport.unproject([viewport.width / 2, viewport.height / 2]);
+  if (!Number.isFinite(lon) || !Number.isFinite(lat)) return 0;
+  const p = globeCommon(lon, lat, 0, out);
+  const c = viewport.cameraPosition;
+  return Math.hypot(p[0] - c[0], p[1] - c[1], p[2] - c[2]);
 }
 
 function clamp(x: number, lo: number, hi: number): number {

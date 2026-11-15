@@ -4,10 +4,19 @@
  *
  * The schemes are a small texture (`liveryPalette`): one row per scheme,
  * one texel per colour. Each instance's `getColor` carries its scheme's row
- * in red and "selected" in green; each vertex carries its part and where on
- * the part it is (see `MeshPart`). The fragment shader looks the colours up
- * and draws the belly line, the fin's second colour and the windows there,
- * so their edges stay sharp however close the camera is.
+ * in red, "selected" in green and how small it is drawn in blue (see
+ * `liverySmallness`); each vertex carries its part and where on the part it
+ * is (see `MeshPart`). The fragment shader looks the colours up and draws the
+ * belly line, the fin's second colour, the nose, the rear fuselage and the
+ * windows there, so their edges stay sharp however close the camera is.
+ *
+ * A model a few dozen pixels long is mostly white from above, as most
+ * airliners are: the fin, which carries most airlines' colour, is edge-on.
+ * So while a model is small its fin is drawn thicker, which shows its colour
+ * from above as a stripe along the rear fuselage, and dark livery colours are
+ * lifted towards their hue's mid tone, so navy reads as blue rather than
+ * black on a few pixels. Both ease off as the model grows on screen and are
+ * gone well before the 3D view's close-up.
  *
  * The shaders are SimpleMeshLayer's own (deck.gl 9.4) with that added. With
  * no palette texture the layer draws `getColor` as SimpleMeshLayer would.
@@ -27,11 +36,33 @@ function rgb(hex: string): [number, number, number] {
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 }
 
+/** On a small model, dark livery colours with a hue are lifted to this brightness (their largest channel, 0..1). */
+export const LIFT_TO = 0.52;
+
+/** A small model's fin is drawn up to this many times its true thickness. */
+export const SMALL_FIN_THICKNESS = 5;
+
+/** Below this length on screen, pixels, a model gets the full small-size treatment; above the second, none. */
+export const SMALL_MODEL_PX: readonly [number, number] = [40, 200];
+
+/**
+ * How much of the small-size treatment a model this many pixels long gets:
+ * 1 up to `SMALL_MODEL_PX[0]`, easing to 0 at `SMALL_MODEL_PX[1]`. The layer
+ * hands it over in the blue of `getColor`, 0..255.
+ */
+export function liverySmallness(lengthPx: number): number {
+  const [lo, hi] = SMALL_MODEL_PX;
+  const t = Math.min(Math.max((lengthPx - lo) / (hi - lo), 0), 1);
+  return 1 - t * t * (3 - 2 * t);
+}
+
 /**
  * The palette's pixels, RGBA, `PALETTE_WIDTH` texels per scheme:
  * 0 top colour, belly line ((sine + 1) / 2) in alpha;
  * 1 belly colour, accent kind (0 none, 1 top, 2 bottom, 3 rear, 4 front) in alpha;
- * 2 fin colour, accent split in alpha; 3 accent colour; 4 engines.
+ * 2 fin colour, accent split in alpha; 3 accent colour; 4 engines;
+ * 5 nose colour, 1 in alpha when the nose is painted, 0 when not;
+ * 6 rear fuselage colour, how far forward it reaches in alpha, 0 when not painted.
  */
 export function liveryPaletteData(liveries: readonly AircraftLivery[]): Uint8Array {
   const data = new Uint8Array(liveries.length * PALETTE_WIDTH * 4);
@@ -46,6 +77,8 @@ export function liveryPaletteData(liveries: readonly AircraftLivery[]): Uint8Arr
     put(2, l.tail, l.accent?.split ?? 0);
     put(3, l.accent?.color ?? l.tail, 1);
     put(4, l.engines ?? "#c4ccd2", 1);
+    put(5, l.nose ?? l.top, l.nose ? 1 : 0);
+    put(6, l.rear?.color ?? l.tail, l.rear?.to ?? 0);
   });
   return data;
 }
@@ -83,6 +116,7 @@ out vec4 position_commonspace;
 out vec4 vColor;
 out vec3 vPart;
 flat out int vLivery;
+const float FIN_THICKNESS = ${SMALL_FIN_THICKNESS.toFixed(2)};
 void main(void) {
   geometry.worldPosition = instancePositions;
   geometry.uv = texCoords;
@@ -92,11 +126,19 @@ void main(void) {
   vLivery = int(instanceColors.r * 255.0 + 0.5);
   cameraPosition = project.cameraPosition;
   vColor = instanceColors;
+  vec3 local = positions;
+  vec3 normal = normals;
+  // A small model's fin, thicker so its colour shows from above (the fin stands on y = 0).
+  if (simpleMesh.hasTexture && colors.x > 1.5 && colors.x < 2.5 && instanceColors.b > 0.0) {
+    float k = mix(1.0, FIN_THICKNESS, instanceColors.b);
+    local.y *= k;
+    normal = normalize(vec3(normal.x, normal.y / k, normal.z));
+  }
   mat3 instanceModelMatrix = mat3(instanceModelMatrixCol0, instanceModelMatrixCol1, instanceModelMatrixCol2);
-  vec3 pos = (instanceModelMatrix * positions) * simpleMesh.sizeScale + instanceTranslation;
+  vec3 pos = (instanceModelMatrix * local) * simpleMesh.sizeScale + instanceTranslation;
   if (simpleMesh.composeModelMatrix) {
     DECKGL_FILTER_SIZE(pos, geometry);
-    normals_commonspace = project_normal(instanceModelMatrix * normals);
+    normals_commonspace = project_normal(instanceModelMatrix * normal);
     geometry.worldPosition += pos;
     gl_Position = project_position_to_clipspace(pos + instancePositions, instancePositions64Low, vec3(0.0), position_commonspace);
     geometry.position = position_commonspace;
@@ -105,7 +147,7 @@ void main(void) {
     DECKGL_FILTER_SIZE(pos, geometry);
     gl_Position = project_position_to_clipspace(instancePositions, instancePositions64Low, pos, position_commonspace);
     geometry.position = position_commonspace;
-    normals_commonspace = project_normal(instanceModelMatrix * normals);
+    normals_commonspace = project_normal(instanceModelMatrix * normal);
   }
   geometry.normal = normals_commonspace;
   DECKGL_FILTER_GL_POSITION(gl_Position, geometry);
@@ -129,10 +171,26 @@ out vec4 fragColor;
 const vec3 WING = vec3(0.79, 0.81, 0.83);
 const vec3 DARK = vec3(0.16, 0.17, 0.18);
 const vec3 GLASS = vec3(0.10, 0.13, 0.16);
+const float LIFT_TO = ${LIFT_TO.toFixed(2)};
 
 vec4 palette(int texel) {
   int rows = textureSize(sampler, 0).y;
   return texelFetch(sampler, ivec2(texel, clamp(vLivery, 0, rows - 1)), 0);
+}
+
+// A livery colour as drawn: on a small model a dark colour with a hue (navy,
+// maroon, forest green) is lifted towards its mid tone, so the hue survives
+// lighting on a few pixels. White, greys and black are left as they are.
+vec3 paint(vec3 c) {
+  float hi = max(c.r, max(c.g, c.b));
+  float lo = min(c.r, min(c.g, c.b));
+  float hue = smoothstep(0.25, 0.6, (hi - lo) / max(hi, 1e-3));
+  float lift = vColor.b * hue * step(hi, LIFT_TO);
+  return mix(c, c * (LIFT_TO / max(hi, 1e-3)), lift);
+}
+
+vec3 colour(int texel) {
+  return paint(palette(texel).rgb);
 }
 
 // 0 below edge, 1 above it, with a pixel's width of blending.
@@ -150,9 +208,15 @@ vec3 fuselage(int part) {
   float fromNose = vPart.z;
   float cabin = vTexCoord.x;
   vec4 top = palette(0);
-  vec3 c = mix(palette(1).rgb, top.rgb, above(a, top.a * 2.0 - 1.0));
+  vec3 c = mix(colour(1), paint(top.rgb), above(a, top.a * 2.0 - 1.0));
   float glass = 0.0;
   if (part == 0) {
+    // The nose cone, below and ahead of the flight deck windows.
+    vec4 nose = palette(5);
+    c = mix(c, paint(nose.rgb), nose.a * (1.0 - above(fromNose, 0.5 - 0.14 * a)));
+    // The fin's colour carried forward over the tail cone, further along the top.
+    vec4 rear = palette(6);
+    if (rear.a > 0.0) c = mix(c, paint(rear.rgb), 1.0 - above(cabin, rear.a + 0.08 * a));
     // A row of cabin windows: dots when close, a dark line when they are too small to tell apart.
     float row = between(a, 0.30, 0.44) * between(cabin, 0.03, 0.96);
     float pitch = fromNose * 8.0;
@@ -172,7 +236,7 @@ vec3 fuselage(int part) {
 }
 
 vec3 fin() {
-  vec3 tail = palette(2).rgb;
+  vec3 tail = colour(2);
   float kind = palette(1).a * 255.0;
   float split = palette(2).a;
   float height = vPart.y;
@@ -182,16 +246,16 @@ vec3 fin() {
   else if (kind > 1.5 && kind < 2.5) accent = 1.0 - above(height, split);
   else if (kind > 2.5 && kind < 3.5) accent = above(chord, split);
   else if (kind > 3.5) accent = 1.0 - above(chord, split);
-  return mix(tail, palette(3).rgb, accent);
+  return mix(tail, colour(3), accent);
 }
 
 vec3 livery() {
   int part = int(vPart.x + 0.5);
   if (part == 0 || part == 6 || part == 7) return fuselage(part);
   if (part == 2) return fin();
-  if (part == 3) return palette(4).rgb;
+  if (part == 3) return colour(4);
   if (part == 4) return DARK;
-  if (part == 5) return palette(2).rgb;
+  if (part == 5) return colour(2);
   return WING;
 }
 
