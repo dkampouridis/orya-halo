@@ -310,6 +310,14 @@ describe("attribution, licence and polling", () => {
     expect(pollsPer10s).toBeLessThan(0.1);
   });
 
+  test("the poll intervals are the ones docs/DATA_LICENCES.md promises the providers", () => {
+    // "we ask every 5 minutes", "every 6 hours", "once an hour", "once an hour".
+    expect(sgLtaTrafficCameras.refreshRate).toBe(5 * 60_000);
+    expect(driveBcHighwayCams.refreshRate).toBe(6 * 3_600_000);
+    expect(calgaryTrafficCameras.refreshRate).toBe(3_600_000);
+    expect(austinTrafficCameras.refreshRate).toBe(3_600_000);
+  });
+
   test("ids are unique within and across the four providers", async () => {
     const all: number[] = [];
     for (const { plugin, url, body } of PLUGINS) {
