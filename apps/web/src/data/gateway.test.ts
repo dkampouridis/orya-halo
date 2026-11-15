@@ -1179,3 +1179,115 @@ describe("gateway JSON", () => {
     expect(parseGatewaySearch([{ kind: 1, id: 1, lon: 0, lat: 0 }])).toEqual([]);
   });
 });
+
+describe("ship values from gateway meta, edge cases", () => {
+  /** An upsert whose rows say their own category (the shared helper fixes it at 3). */
+  function shipUpsert(timeMs: number, rows: { id: number; category: number }[]): ArrayBuffer {
+    return encodeUpsert({
+      kind: S,
+      timeMs,
+      full: false,
+      count: rows.length,
+      ids: rows.map((r) => r.id),
+      lonE7: rows.map(() => 40_000_000),
+      latE7: rows.map(() => 520_000_000),
+      alt: rows.map(() => 0),
+      heading: rows.map(() => 9000),
+      speed: rows.map(() => 50),
+      vrate: rows.map(() => 0),
+      age: rows.map(() => 0),
+      category: rows.map((r) => r.category),
+      entityFlags: rows.map(() => 0),
+    });
+  }
+
+  const valueOf = (h: Harness, id: number) => {
+    const store = h.runtime.storeOf(S);
+    return splitShipValue(store?.value[store.indexOf(id)] as number);
+  };
+
+  test("meta that overtook its ship is read with the category the ship then brings", async () => {
+    const h = await harness();
+    h.socket().hello();
+    h.socket().frame(
+      encodeMeta(S, T0, [{ id: 219_000_001, fields: { label: "MAERSK ESSEN", lengthM: "367" } }]),
+    );
+    h.socket().frame(shipUpsert(T0, [{ id: 219_000_001, category: 1 }]));
+    const v = valueOf(h, 219_000_001);
+    expect(vesselScheme(v.scheme).name).toBe("Maersk");
+    expect(v.model).toBe(VesselModel.Container);
+    expect(v.lengthM).toBe(368);
+    h.runtime.dispose();
+  });
+
+  test("facts sent one at a time add up", async () => {
+    const h = await harness();
+    h.socket().hello();
+    h.socket().frame(shipUpsert(T0, [{ id: 219_000_002, category: 1 }]));
+    h.socket().frame(encodeMeta(S, T0, [{ id: 219_000_002, fields: { label: "MSC ANNA" } }]));
+    h.socket().frame(encodeMeta(S, T0, [{ id: 219_000_002, fields: { lengthM: "366" } }]));
+    h.socket().frame(encodeMeta(S, T0, [{ id: 219_000_002, fields: { widthM: "51" } }]));
+    expect(valueOf(h, 219_000_002)).toMatchObject({
+      lengthM: 366,
+      beamM: 51,
+      model: VesselModel.Container,
+    });
+    expect(vesselScheme(valueOf(h, 219_000_002).scheme).name).toBe("MSC");
+    h.runtime.dispose();
+  });
+
+  test("unreadable dimensions count as unknown, never as NaN", async () => {
+    const h = await harness();
+    h.socket().hello();
+    h.socket().frame(shipUpsert(T0, [{ id: 219_000_003, category: 2 }]));
+    h.socket().frame(
+      encodeMeta(S, T0, [{ id: 219_000_003, fields: { lengthM: "abc", widthM: "-5" } }]),
+    );
+    const store = h.runtime.storeOf(S);
+    expect(Number.isFinite(store?.value[store.indexOf(219_000_003)])).toBe(true);
+    expect(valueOf(h, 219_000_003)).toEqual({
+      lengthM: 0,
+      beamM: 0,
+      model: VesselModel.Tanker,
+      scheme: 0,
+    });
+    h.runtime.dispose();
+  });
+
+  test("a type name alone decides the model, and the batch carries it", async () => {
+    const h = await harness();
+    h.socket().hello();
+    h.socket().frame(shipUpsert(T0, [{ id: 219_000_004, category: 5 }]));
+    h.socket().frame(encodeMeta(S, T0, [{ id: 219_000_004, fields: { typeName: "Tug" } }]));
+    expect(valueOf(h, 219_000_004).model).toBe(VesselModel.Tug);
+    await vi.advanceTimersByTimeAsync(1100);
+    const batch = h.batches(S).at(-1) as RenderBatch;
+    const j = Array.from(batch.ids).indexOf(219_000_004);
+    // No length: the glyph sizes it by category; the model byte says tug.
+    expect(Array.from(batch.style.subarray(j * 4, j * 4 + 4))).toEqual([5, 0, 0, VesselModel.Tug]);
+    h.runtime.dispose();
+  });
+
+  test("meta that says nothing about the ship's shape leaves its value alone", async () => {
+    const h = await harness();
+    h.socket().hello();
+    h.socket().frame(shipUpsert(T0, [{ id: 219_000_005, category: 1 }]));
+    h.socket().frame(
+      encodeMeta(S, T0, [{ id: 219_000_005, fields: { destination: "ROTTERDAM", callsign: "X" } }]),
+    );
+    const store = h.runtime.storeOf(S);
+    expect(store?.value[store.indexOf(219_000_005)]).toBe(0);
+    h.runtime.dispose();
+  });
+
+  test("a number in place of a name is read as text", async () => {
+    const h = await harness();
+    h.socket().hello();
+    h.socket().frame(shipUpsert(T0, [{ id: 219_000_006, category: 1 }]));
+    h.socket().frame(
+      encodeMeta(S, T0, [{ id: 219_000_006, fields: { label: "1234", lengthM: "120" } }]),
+    );
+    expect(valueOf(h, 219_000_006)).toMatchObject({ lengthM: 120, scheme: 0 });
+    h.runtime.dispose();
+  });
+});
