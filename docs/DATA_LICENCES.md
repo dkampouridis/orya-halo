@@ -64,8 +64,11 @@ width, wing sweep, engine layout), which are facts rather than anyone's design. 
 3D model, livery artwork or logo is used, so there is nothing to license or credit.
 
 They are painted in simplified airline colour schemes (`packages/schema/src/aircraft-liveries.ts`):
-a few flat colours per airline (fuselage top and belly, fin, engines), chosen by eye as an
-impression of how its aircraft look from a distance. No logo, name, emblem, typeface or artwork
+a few flat colours per airline (fuselage top and belly, fin, engines, and for some the nose or
+the fin's colour carried onto the tail cone), chosen by eye as an impression of how its
+aircraft look from a distance. Small on screen, the fin is drawn thicker and dark colours
+brighter so the colour can be seen at all, and the flat aircraft symbols further out carry one
+of these colours on their tail. No logo, name, emblem, typeface or artwork
 is drawn, the schemes are not copies of any livery, and no airline made or endorsed them. The
 airline is read from the flight's callsign; nothing else about the airline is shown.
 

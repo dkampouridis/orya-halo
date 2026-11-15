@@ -76,6 +76,14 @@ dashes, and take their true proportions only as they grow towards true scale. Si
 category live in `GLYPH_SCALE` (`packages/layers/src/movers/movers-shaders.ts`), shared by
 the shaders and the selection ring, which grows to clear the silhouette it marks.
 
+An aircraft glyph whose airline is known carries the airline's colour on its tail, behind the
+wings, drawn solid and kept clear of the cyan glow: from a continent away it is a hint of
+which airline that is, and it hands over to the model's coloured fin as the models fade in.
+The colour is the scheme's first coloured paint (`liveryMark`: an all-over fuselage colour,
+else the fin, its second colour, the rear fuselage, the belly, the engines), brightened if
+dark so its hue shows over the night side. Schemes of only white, grey and black, and
+aircraft with no known airline, keep the layer's cyan, so cyan still says "aircraft".
+
 From a country away (zoom 5.6 to 6.6) aircraft turn from glyphs into 3D models of their real types:
 the glyph fades out as the model fades in, keeping its trail and its click target. The models
 are generated from published dimensions (`packages/schema/src/aircraft-types.ts`: length,
@@ -83,9 +91,16 @@ span, fuselage, wing sweep and chord, engines, tail layout; about 300 ICAO type 
 models, with a stand-in by ADS-B category when the type is not known), so an A380 is an A380
 and a Cessna a Cessna. Each is painted in its airline's colour scheme, picked by the callsign's
 ICAO prefix (`packages/schema/src/aircraft-liveries.ts`: about 80 airlines): top and belly
-colours, the fin with an optional second colour, engines, plus cabin windows and flight-deck
-glass drawn in the shader. No logos, names or artwork, only flat colours; aircraft with no
-known airline stay the app's light grey. They bank in turns and pitch on
+colours, the fin with an optional second colour, engines, and where the airline paints them a
+coloured nose (easyJet, Norwegian) or the fin's colour carried onto the tail cone (Ryanair,
+Wizz Air, Qatar Airways), plus cabin windows and flight-deck glass drawn in the shader. No
+logos, names or artwork, only flat colours; aircraft with no known airline stay the app's
+light grey. Most airliners are white from above, and the fin that carries most airlines'
+colour is edge-on there, so while a model is small on screen (up to 40 px long, easing off by
+200 px) its fin is drawn up to five times its true thickness, which shows its colour from
+above as a mark over the rear fuselage, and dark livery colours with a hue are lifted towards
+their mid tone, so navy reads as blue rather than black on a few pixels. Neither touches the
+3D view's close-up. They bank in turns and pitch on
 climbs and descents, and are drawn larger than life (a 40 m airliner 26 px long from a country away,
 48 px close in) until true size can be seen, all by the same factor so relative sizes stay
 true. At most 3,000 are drawn (800 on the balanced tier, none on the cheapest), nearest the
