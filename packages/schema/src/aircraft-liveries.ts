@@ -2,7 +2,9 @@
  * Airline colour schemes for the 3D aircraft.
  *
  * Each is a few flat colours: the fuselage's top and belly, the fin (with an
- * optional second colour on part of it) and the engines. They are simplified
+ * optional second colour on part of it), the engines, and where the airline
+ * paints them, the nose and the fin's colour carried onto the rear fuselage.
+ * They are simplified
  * impressions of how an airline's aircraft look from a distance, not copies
  * of its livery: no logo, name, emblem or artwork is drawn, and no airline
  * has made or endorsed them.
@@ -45,6 +47,14 @@ export interface AircraftLivery {
   readonly accent?: { readonly color: string; readonly on: LiveryAccent; readonly split: number };
   /** Engine nacelles; the default is light grey. */
   readonly engines?: string;
+  /** The nose cone, ahead of the flight deck windows, where the airline paints it. */
+  readonly nose?: string;
+  /**
+   * A colour carried from the fin onto the rear fuselage: the whole tail cone,
+   * and forward over the cabin to `to` of its length (0 at its rear end, 1 at
+   * the nose), reaching a little further along the top than the belly.
+   */
+  readonly rear?: { readonly color: string; readonly to: number };
 }
 
 const WHITE = "#f3f5f7";
@@ -72,12 +82,21 @@ const SCHEMES: readonly Omit<AircraftLivery, "id">[] = [
     bellyLine: -0.2,
     tail: "#073590",
     engines: "#073590",
+    // The blue belly sweeps up into the fin at the back.
+    rear: { color: "#073590", to: 0.06 },
   }),
-  L("easyJet", ["EZY", "EJU", "EZS"], { top: WHITE, tail: "#ff6600", engines: "#ff6600" }),
+  L("easyJet", ["EZY", "EJU", "EZS"], {
+    top: WHITE,
+    tail: "#ff6600",
+    engines: "#ff6600",
+    nose: "#ff6600",
+  }),
   L("Wizz Air", ["WZZ", "WMT", "WUK", "WAZ"], {
     top: WHITE,
     tail: "#c6007e",
     accent: { color: "#2b2a72", on: "bottom", split: 0.35 },
+    // Magenta and violet sweep over the rear fuselage.
+    rear: { color: "#c6007e", to: 0.16 },
   }),
   L("Lufthansa", ["DLH", "CLH", "LHX"], { top: WHITE, tail: "#05164d", engines: "#05164d" }),
   L("Air France", ["AFR", "HOP"], {
@@ -124,8 +143,15 @@ const SCHEMES: readonly Omit<AircraftLivery, "id">[] = [
     belly: "#d9d9db",
     bellyLine: -0.25,
     tail: "#5c0632",
+    // The maroon runs forward from the fin over the top of the rear fuselage.
+    rear: { color: "#5c0632", to: 0.1 },
   }),
-  L("Turkish Airlines", ["THY"], { top: WHITE, tail: "#c8102e" }),
+  L("Turkish Airlines", ["THY"], {
+    top: WHITE,
+    belly: "#c3c8ce",
+    bellyLine: -0.3,
+    tail: "#c8102e",
+  }),
   L("Aegean Airlines", ["AEE"], { top: WHITE, tail: "#1f3c88", engines: "#1f3c88" }),
   L("Swiss", ["SWR"], { top: WHITE, tail: "#e30613" }),
   L("Austrian Airlines", ["AUA"], { top: WHITE, tail: "#d81e05" }),
@@ -135,7 +161,12 @@ const SCHEMES: readonly Omit<AircraftLivery, "id">[] = [
     accent: { color: "#fcb913", on: "bottom", split: 0.35 },
   }),
   L("SAS", ["SAS"], { top: "#e7e9ee", tail: "#000f60", engines: "#000f60" }),
-  L("Qantas", ["QFA", "QLK"], { top: WHITE, tail: "#e0001b" }),
+  L("Qantas", ["QFA", "QLK"], {
+    top: WHITE,
+    tail: "#e0001b",
+    // The red fin runs down onto the tail cone.
+    rear: { color: "#e0001b", to: 0.03 },
+  }),
   L("Virgin Atlantic", ["VIR"], { top: "#eef0f3", tail: "#e10a0a" }),
   L("Transavia", ["TRA", "TVF"], { top: WHITE, tail: "#00b562" }),
   L("Jet2", ["EXS"], { top: WHITE, tail: "#d0021b" }),
@@ -170,7 +201,7 @@ const SCHEMES: readonly Omit<AircraftLivery, "id">[] = [
     bellyLine: -0.25,
     tail: "#4d148c",
   }),
-  L("Norwegian", ["NAX", "NOZ", "NSZ"], { top: WHITE, tail: "#d81939" }),
+  L("Norwegian", ["NAX", "NOZ", "NSZ"], { top: WHITE, tail: "#d81939", nose: "#d81939" }),
   // Gulf and Middle East.
   L("Emirates", ["UAE"], {
     top: WHITE,
@@ -197,6 +228,7 @@ const SCHEMES: readonly Omit<AircraftLivery, "id">[] = [
     tail: "#fdb913",
     accent: { color: "#e30613", on: "bottom", split: 0.4 },
     engines: "#fdb913",
+    rear: { color: "#fdb913", to: 0.05 },
   }),
   L("AJet", ["TKJ"], { top: WHITE, tail: "#0b2d63", engines: "#0b2d63" }),
   L("SunExpress", ["SXS"], { top: WHITE, tail: "#f7a600" }),
@@ -296,6 +328,35 @@ export function aircraftLiveryForCallsign(callsign: string | undefined | null): 
 
 export function aircraftLivery(id: number): AircraftLivery {
   return AIRCRAFT_LIVERIES[id] ?? NEUTRAL_LIVERY;
+}
+
+/** True for a colour with a hue to it: not white, grey or black. */
+function chromatic(hex: string): boolean {
+  const n = Number.parseInt(hex.slice(1), 16);
+  const c = [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  const hi = Math.max(...c);
+  const lo = Math.min(...c);
+  // Korean Air's pale sky blue, at 0.3, is the palest that has to count.
+  return hi >= 40 && (hi - lo) / hi >= 0.25;
+}
+
+/**
+ * The colour that says which airline this is from a distance, or null when
+ * the scheme has none (only white, greys and black). It is the first
+ * coloured one of: the fuselage top (an aircraft painted all over), the fin,
+ * the fin's second colour, the rear fuselage, the belly, the engines. Small
+ * glyphs carry it on their tail.
+ */
+export function liveryMark(livery: AircraftLivery): string | null {
+  const candidates = [
+    livery.top,
+    livery.tail,
+    livery.accent?.color,
+    livery.rear?.color,
+    livery.belly,
+    livery.engines,
+  ];
+  return candidates.find((c): c is string => c !== undefined && chromatic(c)) ?? null;
 }
 
 /** An aircraft's batch value: its model id in the low byte, its colour scheme in the next. */

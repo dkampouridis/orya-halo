@@ -7,6 +7,7 @@ import {
   aircraftLiveryForCallsign,
   aircraftValue,
   airlineOfCallsign,
+  liveryMark,
   splitAircraftValue,
 } from "../src/index.ts";
 
@@ -29,7 +30,7 @@ describe("airline colour schemes", () => {
 
   test("colours are #rrggbb and the numbers are in range", () => {
     for (const l of AIRCRAFT_LIVERIES) {
-      for (const c of [l.top, l.belly, l.tail, l.engines, l.accent?.color]) {
+      for (const c of [l.top, l.belly, l.tail, l.engines, l.accent?.color, l.nose, l.rear?.color]) {
         if (c !== undefined) expect(c).toMatch(/^#[0-9a-f]{6}$/);
       }
       if (l.bellyLine !== undefined) {
@@ -40,6 +41,39 @@ describe("airline colour schemes", () => {
         expect(l.accent.split).toBeGreaterThan(0);
         expect(l.accent.split).toBeLessThan(1);
       }
+      if (l.rear) {
+        // Past the tail cone, and well short of the nose: it is the fin's colour carried forward.
+        expect(l.rear.to).toBeGreaterThan(0);
+        expect(l.rear.to).toBeLessThan(0.5);
+      }
+    }
+  });
+
+  test("each airline's mark is its first coloured paint", () => {
+    const byName = (name: string) => {
+      const l = AIRCRAFT_LIVERIES.find((s) => s.name === name);
+      if (!l) throw new Error(name);
+      return l;
+    };
+    // White aircraft are known by the fin.
+    expect(liveryMark(byName("easyJet"))).toBe("#ff6600");
+    expect(liveryMark(byName("Wizz Air"))).toBe("#c6007e");
+    expect(liveryMark(byName("Lufthansa"))).toBe("#05164d");
+    // Painted all over: the fuselage colour, however pale.
+    expect(liveryMark(byName("KLM"))).toBe("#00a1de");
+    expect(liveryMark(byName("Korean Air"))).toBe("#a7d5ee");
+    expect(liveryMark(byName("DHL"))).toBe("#ffcc00");
+    // A white fin: its second colour. A grey one: the engines.
+    expect(liveryMark(byName("Air France"))).toBe("#002157");
+    expect(liveryMark(byName("Vueling"))).toBe("#ffcc00");
+    // Only white, grey and black: no mark.
+    expect(liveryMark(byName("Air Canada"))).toBeNull();
+    expect(liveryMark(NEUTRAL_LIVERY)).toBeNull();
+    // Every scheme with any colour at all has one.
+    for (const l of AIRCRAFT_LIVERIES.slice(1)) {
+      const mark = liveryMark(l);
+      if (mark)
+        expect([l.top, l.tail, l.accent?.color, l.rear?.color, l.belly, l.engines]).toContain(mark);
     }
   });
 
