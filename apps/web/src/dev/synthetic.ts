@@ -14,8 +14,11 @@ import {
   MOTION_SIZE,
   POSITION_SIZE,
   STYLE_SIZE,
+  ShipCategory,
   createRenderBatch,
   extrapolate,
+  shipValueFor,
+  splitShipValue,
 } from "@orya-halo/schema";
 import type { DensityGrid, PathSet, RenderBatch, Track } from "@orya-halo/schema";
 
@@ -219,11 +222,57 @@ const SHIP_LENGTHS: readonly (readonly [number, number])[] = [
   [20, 120], // other
 ];
 
-/** A stable, plausible length for a synthetic ship, as the render style byte (length over 400 m). */
-function shipLengthByte(category: number, id: number): number {
+/** Name prefixes for synthetic ships, by category: some of them pick an operator's colours. */
+const SHIP_NAMES: Partial<Record<number, readonly string[]>> = {
+  [ShipCategory.Cargo]: [
+    "MAERSK",
+    "MSC",
+    "CMA CGM",
+    "COSCO",
+    "EVER",
+    "YM",
+    "HMM",
+    "ONE",
+    "ZIM",
+    "HOEGH",
+  ],
+  [ShipCategory.Passenger]: [
+    "CARNIVAL",
+    "COSTA",
+    "MSC",
+    "AIDA",
+    "CELEBRITY",
+    "DISNEY",
+    "NORWEGIAN",
+  ],
+  [ShipCategory.Other]: ["RV", "USCGC", "CCGS"],
+};
+/** AIS ship types for synthetic ships of the categories that have several. */
+const SHIP_TYPE_NAMES: Partial<Record<number, readonly string[]>> = {
+  [ShipCategory.Service]: ["Tug", "Pilot vessel", "Law enforcement", "Search and rescue vessel"],
+  [ShipCategory.Pleasure]: ["Sailing vessel", "Pleasure craft"],
+};
+
+/**
+ * A stable, plausible batch value for a synthetic ship: its length and beam,
+ * and a name and type that give it a model and colours as real ones get them.
+ */
+function syntheticShipValue(category: number, id: number): number {
   const [min, max] = SHIP_LENGTHS[category] ?? SHIP_LENGTHS[0];
-  const u = ((Math.imul(id, 2654435761) >>> 0) % 1000) / 1000;
-  return Math.round(((min + (max - min) * u) / 400) * 255);
+  const hash = (salt: number): number => (Math.imul(id ^ salt, 2654435761) >>> 0) % 1000;
+  const lengthM = min + ((max - min) * hash(0)) / 1000;
+  const beamM = lengthM / (5.5 + (3 * hash(0x9e37)) / 1000);
+  const names = SHIP_NAMES[category] ?? [];
+  // Half the ships of a category with operators get one.
+  const pick = hash(0x7f4a) % (names.length * 2);
+  const types = SHIP_TYPE_NAMES[category] ?? [];
+  return shipValueFor({
+    category,
+    name: pick < names.length ? `${names[pick]} SYNTH` : "SYNTH",
+    typeName: types.length > 0 ? types[hash(0x3c6e) % types.length] : null,
+    lengthM,
+    beamM,
+  });
 }
 
 interface Fleet {
@@ -240,6 +289,8 @@ interface Fleet {
   category: Uint8Array;
   /** Satellites only: inclination, ascending node, phase and mean motion (rad/s). */
   orbit?: Float64Array;
+  /** Ships only: the batch value (`syntheticShipValue`), worked out once. */
+  value?: Float32Array;
   seq: number;
   batch: RenderBatch | null;
 }
@@ -449,8 +500,14 @@ export class SyntheticWorld {
         }
         batch.style[s] = f.category[i];
         batch.style[s + 1] = f.flags[i];
-        if (f.kind === EntityKind.Ship)
-          batch.style[s + 2] = shipLengthByte(f.category[i], batch.ids[i]);
+        if (f.kind === EntityKind.Ship) {
+          if (!f.value) f.value = new Float32Array(f.count);
+          if (f.value[i] === 0) f.value[i] = syntheticShipValue(f.category[i], batch.ids[i]);
+          const ship = splitShipValue(f.value[i]);
+          batch.values[i] = f.value[i];
+          batch.style[s + 2] = Math.min(255, Math.round((ship.lengthM / 400) * 255));
+          batch.style[s + 3] = ship.model;
+        }
         if (f.kind === EntityKind.Aircraft) {
           batch.style[s + 2] = syntheticLivery(batch.ids[i]);
           batch.style[s + 3] = syntheticAircraftModel(batch.ids[i]);

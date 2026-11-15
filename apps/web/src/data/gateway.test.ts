@@ -16,8 +16,11 @@ import {
   encodeStats,
   encodeUpsert,
   inflateFrame,
+  VesselModel,
   splitAircraftValue,
+  splitShipValue,
   updateToUpsert,
+  vesselScheme,
 } from "@orya-halo/schema";
 import type {
   ClientMessage,
@@ -330,6 +333,45 @@ describe("gateway client", () => {
     h.runtime.dispose();
   });
 
+  test("a ship's meta becomes its length, beam, 3D model and colours", async () => {
+    const h = await harness();
+    const socket = h.socket();
+    socket.hello();
+    // The test frames' category is 3: passenger ships.
+    socket.frame(upsert(S, T0, true, [{ id: 255_805_000, lon: 9.9, lat: 53.5, heading: 120 }]));
+    socket.frame(
+      encodeMeta(S, T0, [
+        {
+          id: 255_805_000,
+          fields: {
+            label: "MSC WORLD EUROPA",
+            lengthM: "333",
+            widthM: "47",
+            typeName: "Passenger ship",
+          },
+        },
+      ]),
+    );
+    const store = h.runtime.storeOf(S);
+    const i = store?.indexOf(255_805_000) as number;
+    const v = splitShipValue(store?.value[i] as number);
+    expect(v).toMatchObject({ lengthM: 334, beamM: 47, model: VesselModel.Cruise });
+    expect(vesselScheme(v.scheme).name).toBe("MSC Cruises");
+
+    // A later message with only a name keeps the dimensions it already gave.
+    socket.frame(encodeMeta(S, T0, [{ id: 255_805_000, fields: { destination: "HAMBURG" } }]));
+    expect(splitShipValue(store?.value[i] as number).lengthM).toBe(334);
+
+    await vi.advanceTimersByTimeAsync(1100);
+    const batch = h.batches(S).at(-1) as RenderBatch;
+    const j = Array.from(batch.ids).indexOf(255_805_000);
+    // The glyph's length byte (over 400 m), and the model in the fourth byte.
+    expect(batch.style[j * 4 + 2]).toBe(Math.round((334 / 400) * 255));
+    expect(batch.style[j * 4 + 3]).toBe(VesselModel.Cruise);
+    expect(batch.values[j]).toBe(store?.value[i]);
+    h.runtime.dispose();
+  });
+
   test("a later FULL frame drops whatever it does not list", async () => {
     const h = await harness();
     h.socket().hello();
@@ -360,7 +402,7 @@ describe("gateway client", () => {
     h.runtime.dispose();
   });
 
-  test("a ship's length from meta becomes its value, and survives later upserts", async () => {
+  test("a ship's length from meta goes into its value, and survives later upserts", async () => {
     const h = await harness();
     h.socket().hello();
     h.socket().frame(upsert(S, T0, true, [{ id: 244660000, lon: 4, lat: 52 }]));
@@ -368,7 +410,7 @@ describe("gateway client", () => {
       encodeMeta(S, T0, [{ id: 244660000, fields: { label: "STENA HOLLANDICA", lengthM: "240" } }]),
     );
     h.socket().frame(upsert(S, T0 + 1000, false, [{ id: 244660000, lon: 4.01, lat: 52 }]));
-    expect(h.runtime.storeOf(S)?.value[0]).toBe(240);
+    expect(splitShipValue(h.runtime.storeOf(S)?.value[0] as number).lengthM).toBe(240);
     h.runtime.dispose();
   });
 

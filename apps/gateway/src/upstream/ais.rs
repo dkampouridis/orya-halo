@@ -25,6 +25,34 @@ pub fn ship_category(ais_type: u32) -> u8 {
     }
 }
 
+/// AIS ship-and-cargo type code as a short phrase, or `None` when undefined.
+/// The web app draws tugs, pilot boats, coast guards and yachts from it.
+pub fn ship_type_name(ais_type: u32) -> Option<&'static str> {
+    Some(match ais_type {
+        20..=29 => "Wing in ground craft",
+        30 => "Fishing vessel",
+        31 | 32 => "Towing vessel",
+        33 => "Dredger or underwater operations",
+        34 => "Diving vessel",
+        35 => "Military",
+        36 => "Sailing vessel",
+        37 => "Pleasure craft",
+        40..=49 => "High-speed craft",
+        50 => "Pilot vessel",
+        51 => "Search and rescue vessel",
+        52 => "Tug",
+        53 => "Port tender",
+        54 => "Anti-pollution vessel",
+        55 => "Law enforcement",
+        58 => "Medical transport",
+        60..=69 => "Passenger ship",
+        70..=79 => "Cargo ship",
+        80..=89 => "Tanker",
+        90..=99 => "Other type",
+        _ => return None,
+    })
+}
+
 /// Navigational status code as a short phrase, or `None` when undefined.
 pub fn nav_status_name(status: u8) -> Option<&'static str> {
     Some(match status {
@@ -140,6 +168,9 @@ pub fn static_data(s: &StaticData<'_>, now_ms: i64) -> Option<Observation> {
     }
     if let Some(ship_type) = s.ship_type {
         obs.category = Some(ship_category(ship_type));
+        if let Some(name) = ship_type_name(ship_type) {
+            obs.fact(MetaKey::TypeName, name);
+        }
     }
     let length = s.to_bow + s.to_stern;
     let width = s.to_port + s.to_starboard;
@@ -314,6 +345,7 @@ mod tests {
         let get = |key| o.meta.iter().find(|(k, _)| *k == key).map(|(_, v)| v.as_str());
         assert_eq!(get(MetaKey::Label), Some("SILJA SERENADE"));
         assert_eq!(get(MetaKey::Callsign), Some("OJCS"));
+        assert_eq!(get(MetaKey::TypeName), Some("Passenger ship"));
         assert_eq!(get(MetaKey::Imo), Some("8715259"));
         assert_eq!(get(MetaKey::LengthM), Some("203"));
         assert_eq!(get(MetaKey::WidthM), Some("32"));

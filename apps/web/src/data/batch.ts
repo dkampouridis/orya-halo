@@ -16,6 +16,7 @@ import {
   createRenderBatch,
   extrapolate,
   splitAircraftValue,
+  splitShipValue,
 } from "@orya-halo/schema";
 import type { RenderBatch } from "@orya-halo/schema";
 import type { EntityStore } from "./store.ts";
@@ -39,9 +40,14 @@ export function liveryByte(value: number): number {
   return splitAircraftValue(value).livery;
 }
 
+/** The `style[3]` byte for ships: the 3D model of the ship's kind (`vesselModelFor`), 0 when not decided. */
+export function shipModelByte(value: number): number {
+  return splitShipValue(value).model;
+}
+
 /**
  * The `style[2]` byte: a kind's scalar squeezed to 0..255 for the shader.
- * Ships: length, 0..400 m. Satellites: orbital period, 0..1440 min.
+ * Ships: length, 0..400 m (a ship's value packs more, see `shipValue`). Satellites: orbital period, 0..1440 min.
  * Earthquakes: magnitude, 0..10. Fires: radiative power on a log scale,
  * 1000 MW and above is 255. Other kinds: 0.
  */
@@ -49,7 +55,7 @@ export function styleValue(kind: EntityKind, value: number): number {
   let x = 0;
   switch (kind) {
     case EntityKind.Ship:
-      x = value / 400;
+      x = splitShipValue(value).lengthM / 400;
       break;
     case EntityKind.Satellite:
       x = value / 1440;
@@ -217,8 +223,10 @@ export class BatchBuilder {
       const s = i * STYLE_SIZE;
       style[s] = category[i];
       style[s + 1] = flags[i];
-      if (styled) style[s + 2] = styleValue(kind, value[i]);
-      else if (kind === EntityKind.Aircraft) {
+      if (styled) {
+        style[s + 2] = styleValue(kind, value[i]);
+        if (kind === EntityKind.Ship) style[s + 3] = shipModelByte(value[i]);
+      } else if (kind === EntityKind.Aircraft) {
         style[s + 2] = liveryByte(value[i]);
         style[s + 3] = modelByte(value[i]);
       }

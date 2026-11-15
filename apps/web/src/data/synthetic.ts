@@ -15,6 +15,7 @@ import {
   ShipCategory,
   createColumns,
   defineSource,
+  shipValueFor,
 } from "@orya-halo/schema";
 import type { EntityMeta, EntityUpdate, SourcePlugin } from "@orya-halo/schema";
 
@@ -119,10 +120,12 @@ function createFleet(kind: EntityKind, count: number, seed: number, nowMs: numbe
     } else {
       fleet.speed[i] = random() < 0.2 ? 0 : 3 + random() * 9;
       fleet.category[i] = 1 + Math.floor(random() * (ShipCategory.Other - 1));
+      const lengthM = Math.round(40 + random() * 300);
       fleet.meta.push({
         label: `Synthetic ${i + 1}`,
         typeName: "Synthetic vessel",
-        lengthM: Math.round(40 + random() * 300),
+        lengthM,
+        widthM: Math.round(lengthM / (5.5 + random() * 3)),
       });
     }
   }
@@ -172,14 +175,18 @@ function normaliseFleet(fleet: Fleet, source: string): EntityUpdate {
     columns.vrate[k] = fleet.vrate[i];
     columns.fixTimeMs[k] = fleet.fixTimeMs[i];
     columns.category[k] = fleet.category[i];
-    const length = fleet.meta[i].lengthM;
-    const typeCode = fleet.meta[i].typeCode;
-    // An aircraft's value is the 3D model of its type, as the gateway path sets it from meta.
+    const meta = fleet.meta[i];
+    // An aircraft's value is the 3D model of its type, a ship's its size and
+    // kind, as the gateway path sets them from meta.
     columns.value[k] =
-      typeof length === "number"
-        ? length
-        : typeof typeCode === "string"
-          ? aircraftModelForType(typeCode)
+      fleet.kind === EntityKind.Ship
+        ? shipValueFor({
+            category: fleet.category[i],
+            lengthM: Number(meta.lengthM),
+            beamM: Number(meta.widthM),
+          })
+        : typeof meta.typeCode === "string"
+          ? aircraftModelForType(meta.typeCode)
           : 0;
   }
   const update: EntityUpdate = {

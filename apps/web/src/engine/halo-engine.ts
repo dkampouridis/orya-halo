@@ -26,6 +26,10 @@ import {
   AircraftModelsLayer,
   prepareAircraftMeshes,
   warmAircraftModelsLayer,
+  ShipModelsLayer,
+  prepareVesselMeshes,
+  shipModelOf,
+  warmShipModelsLayer,
   markersFromBatch,
   markersFromDensity,
   moverGlyphScale,
@@ -186,6 +190,15 @@ const MAX_PITCH = 70;
  * their types: the glyph fades out as the model fades in.
  */
 const MODEL_ZOOM: [number, number] = [5.6, 6.6];
+
+/**
+ * Zoom range over which ships turn from flat glyphs into 3D models of their
+ * kinds. Later than aircraft: ships crowd coasts and ports, and below this
+ * a model is a handful of pixels, no more telling than the glyph.
+ */
+const SHIP_MODEL_ZOOM: [number, number] = [7.5, 8.5];
+/** The ship glyph's sizes grow with this ease, as the movers layer's default does. */
+const SHIP_GLYPH_EASE = 1.6;
 
 /** Smallest ring diameters, pixels; rings grow to clear larger silhouettes. */
 const HOVER_RING_PX = 18;
@@ -479,6 +492,8 @@ export class HaloEngineImpl implements HaloEngine {
   private layersDirty = true;
   /** Where the aircraft models layer sits in `layers`, or -1 when it is not drawn. */
   private modelsIndex = -1;
+  /** Where the ship models layer sits in `layers`, or -1 when it is not drawn. */
+  private shipModelsIndex = -1;
   /** Rate of turn by aircraft id, degrees a second, from successive fixes: banks the models. */
   private turnRates = new Map<number, number>();
   private lastHeadings = new Map<number, { heading: number; fixMs: number }>();
@@ -701,6 +716,7 @@ export class HaloEngineImpl implements HaloEngine {
       }),
       new ReticleLayer({ id: "warm-reticle", reticles: [ring], parameters: GLOW_PARAMETERS }),
       warmAircraftModelsLayer("warm-models"),
+      warmShipModelsLayer("warm-ship-models"),
     ];
     return this.warmSet;
   }
@@ -1011,11 +1027,13 @@ export class HaloEngineImpl implements HaloEngine {
       this.refreshOverlayFrames();
     }
     if (this.modelsActive() !== this.modelsIndex >= 0) this.layersDirty = true;
+    if (this.shipModelsActive() !== this.shipModelsIndex >= 0) this.layersDirty = true;
     if (this.layersDirty) this.rebuildLayers();
-    else if (this.modelsIndex >= 0) {
+    else if (this.modelsIndex >= 0 || this.shipModelsIndex >= 0) {
       // Models are placed on the CPU: a fresh layer each frame moves them.
       const layers = this.layers.slice();
-      layers[this.modelsIndex] = this.modelsLayer();
+      if (this.modelsIndex >= 0) layers[this.modelsIndex] = this.modelsLayer();
+      if (this.shipModelsIndex >= 0) layers[this.shipModelsIndex] = this.shipModelsLayer();
       this.layers = layers;
       this.overlay.setProps({ layers });
     }
@@ -1028,7 +1046,7 @@ export class HaloEngineImpl implements HaloEngine {
 
   private reticleLayer: ReticleLayer | null = null;
 
-  /** Build the 3D aircraft meshes in idle moments after start-up, a few at a time. */
+  /** Build the 3D aircraft and vessel meshes in idle moments after start-up, a few at a time. */
   private prepareModelsWhenIdle(): void {
     const step = (deadline?: IdleDeadline): void => {
       if (this.destroyed) return;
@@ -1036,7 +1054,7 @@ export class HaloEngineImpl implements HaloEngine {
       const timeLeft = deadline
         ? () => deadline.timeRemaining()
         : () => 8 - (performance.now() - started);
-      if (!prepareAircraftMeshes(timeLeft)) schedule();
+      if (!prepareAircraftMeshes(timeLeft) || !prepareVesselMeshes(timeLeft)) schedule();
     };
     const schedule = (): void => {
       if (typeof requestIdleCallback === "function") requestIdleCallback(step, { timeout: 2000 });
@@ -1100,7 +1118,7 @@ export class HaloEngineImpl implements HaloEngine {
           const camera = chaseCamera(
             at.lon,
             at.lat,
-            this.drawnAltitude(EntityKind.Aircraft, at.alt),
+            this.drawnAltitude(this.selection.kind, at.alt),
             this.chaseBearing,
             this.chasePitch,
             this.chaseDistanceM,
@@ -1315,6 +1333,41 @@ export class HaloEngineImpl implements HaloEngine {
       minPixels: this.chasing ? size.min * far : size.min,
       maxModels: QUALITY[this.quality].aircraftModels,
       opacity: t * t * (3 - 2 * t),
+    });
+  }
+
+  /** True when ships should be drawn as 3D models at the current zoom (or one is chased). */
+  private shipModelsActive(): boolean {
+    const batch = this.batches.get(EntityKind.Ship);
+    return (
+      QUALITY[this.quality].shipModels > 0 &&
+      this.visible.ships &&
+      batch !== undefined &&
+      batch.count > 0 &&
+      (this.map.getZoom() >= SHIP_MODEL_ZOOM[0] ||
+        (this.chasing && this.selection?.kind === EntityKind.Ship))
+    );
+  }
+
+  private shipModelsLayer(): ShipModelsLayer {
+    const zoom = this.map.getZoom();
+    const style = MOVERS[EntityKind.Ship];
+    const glyph = style
+      ? sizeAtZoom(zoom, style.sizeZoomRange, style.sizePixels, SHIP_GLYPH_EASE)
+      : 14;
+    const chasingShip = this.chasing && this.selection?.kind === EntityKind.Ship;
+    // As for aircraft: true size close behind the chased ship, enlarged again pulled far back.
+    const far = this.chasing ? smoothstep(4, 16, this.chaseZoom) : 0;
+    const t = clamp((zoom - SHIP_MODEL_ZOOM[0]) / (SHIP_MODEL_ZOOM[1] - SHIP_MODEL_ZOOM[0]), 0, 1);
+    return new ShipModelsLayer({
+      id: "ship-models",
+      batch: this.batches.get(EntityKind.Ship) ?? null,
+      timeMs: this.now(),
+      glyphPixels: this.chasing ? glyph * far : glyph,
+      selectedId: this.selection?.kind === EntityKind.Ship ? this.selection.id : null,
+      selectedScale: chasingShip ? this.chaseScale(this.chaseSubject().size) * (1 - far) + far : 1,
+      maxModels: QUALITY[this.quality].shipModels,
+      opacity: chasingShip ? 1 : t * t * (3 - 2 * t),
     });
   }
 
@@ -1590,7 +1643,11 @@ export class HaloEngineImpl implements HaloEngine {
           farThin: q.farThin,
           slowMotion: this.reducedMotion,
           bodyFadeZoomRange:
-            kind === EntityKind.Aircraft && q.aircraftModels > 0 ? MODEL_ZOOM : null,
+            kind === EntityKind.Aircraft && q.aircraftModels > 0
+              ? MODEL_ZOOM
+              : kind === EntityKind.Ship && q.shipModels > 0
+                ? SHIP_MODEL_ZOOM
+                : null,
           pickable: true,
           parameters: GLOW_PARAMETERS,
         }),
@@ -1602,6 +1659,16 @@ export class HaloEngineImpl implements HaloEngine {
       // with its last layer, and a recompile is a 40 ms stall the first time
       // models appear). One transparent instance, smaller than a pixel.
       layers.push(warmAircraftModelsLayer("models-keep"));
+    }
+    if (q.shipModels > 0 && this.visible.ships) {
+      // The same for the ship models' shaders.
+      layers.push(warmShipModelsLayer("ship-models-keep"));
+    }
+    this.shipModelsIndex = -1;
+    if (this.shipModelsActive()) {
+      // Under the aircraft: drawn first, so an aircraft low over a port stays on top.
+      this.shipModelsIndex = layers.length;
+      layers.push(this.shipModelsLayer());
     }
     this.modelsIndex = -1;
     if (this.modelsActive()) {
@@ -1710,7 +1777,9 @@ export class HaloEngineImpl implements HaloEngine {
   }
 
   setChase(chase: boolean): void {
-    const next = chase && this.selection?.kind === EntityKind.Aircraft && !this.destroyed;
+    const kind = this.selection?.kind;
+    const next =
+      chase && (kind === EntityKind.Aircraft || kind === EntityKind.Ship) && !this.destroyed;
     if (next === this.chasing || !this.map) return;
     clearTimeout(this.chaseRestore);
     if (next) {
@@ -1849,10 +1918,16 @@ export class HaloEngineImpl implements HaloEngine {
     return Math.max(1, CHASE_MIN_DRAWN_M / size);
   }
 
-  /** The chased aircraft's size (larger of length and span, metres) and heading. */
+  /** The chased aircraft's size (larger of length and span, metres; a ship's length) and heading. */
   private chaseSubject(): { size: number; heading: number } {
     const found = this.selection ? this.batchIndex(this.selection) : null;
     if (!found) return { size: 40, heading: Number.NaN };
+    if (this.selection?.kind === EntityKind.Ship) {
+      return {
+        size: shipModelOf(found.batch, found.index).lengthM,
+        heading: found.batch.motion[found.index * MOTION_SIZE],
+      };
+    }
     const s = found.index * STYLE_SIZE;
     const spec = aircraftModel(
       found.batch.style[s + 3] || genericAircraftModel(found.batch.style[s]),

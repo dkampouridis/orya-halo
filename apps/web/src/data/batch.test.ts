@@ -5,6 +5,7 @@ import {
   batchTransferables,
   extrapolate,
   indexOfId,
+  shipValue,
 } from "@orya-halo/schema";
 import { BatchBuilder, styleValue } from "./batch.ts";
 import { EntityStore } from "./store.ts";
@@ -298,7 +299,10 @@ describe("BatchBuilder", () => {
   test("styleValue maps each kind's scalar onto a byte", () => {
     expect(styleValue(EntityKind.Quake, 5)).toBe(128);
     expect(styleValue(EntityKind.Quake, 12)).toBe(255);
-    expect(styleValue(EntityKind.Ship, 200)).toBe(128);
+    // A ship's value packs its length with its beam, model and colours.
+    expect(
+      styleValue(EntityKind.Ship, shipValue({ lengthM: 200, beamM: 32, model: 3, scheme: 20 })),
+    ).toBe(128);
     expect(styleValue(EntityKind.Satellite, 1440)).toBe(255);
     expect(styleValue(EntityKind.Fire, 0)).toBe(0);
     expect(styleValue(EntityKind.Fire, 999)).toBe(255);

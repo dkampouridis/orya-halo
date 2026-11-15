@@ -5,3 +5,5 @@ export * from "./source.ts";
 export * from "./runtime.ts";
 export * from "./aircraft-types.ts";
 export * from "./aircraft-liveries.ts";
+export * from "./vessel-types.ts";
+export * from "./vessel-schemes.ts";

@@ -1,5 +1,12 @@
 import { describe, expect, test } from "vite-plus/test";
-import { EARTH_RADIUS_M, EntityKind, extrapolate, indexOfId } from "@orya-halo/schema";
+import {
+  EARTH_RADIUS_M,
+  EntityKind,
+  VesselModel,
+  extrapolate,
+  indexOfId,
+  shipValue,
+} from "@orya-halo/schema";
 import { HISTORY_PROFILES, HistoryRing } from "./history.ts";
 import type { HistoryProfile } from "./history.ts";
 import { EntityStore } from "./store.ts";
@@ -360,11 +367,12 @@ describe("HistoryRing", () => {
   });
 
   test("ships are recorded without altitude, at a finer speed step", () => {
+    const value = shipValue({ lengthM: 180, beamM: 28, model: VesselModel.Ferry, scheme: 0 });
     const ring = new HistoryRing(EntityKind.Ship, 30 * 60_000, SHIPS);
     const store = new EntityStore(EntityKind.Ship);
     store.apply(
       makeUpdate(EntityKind.Ship, "a", T0, [
-        { id: 244660000, lon: 4.1, lat: 52, heading: 270, speed: 7.3, value: 180 },
+        { id: 244660000, lon: 4.1, lat: 52, heading: 270, speed: 7.3, value },
       ]),
       T0,
     );
@@ -372,6 +380,9 @@ describe("HistoryRing", () => {
     const batch = ring.reconstruct(T0, 1) as NonNullable<ReturnType<HistoryRing["reconstruct"]>>;
     expect(batch.motion[1]).toBeCloseTo(7.3, 0);
     expect(batch.positions[2]).toBe(0);
-    expect(batch.values[0]).toBe(180);
+    expect(batch.values[0]).toBe(value);
+    // Replayed ships keep their glyph length and 3D model, as live batches have them.
+    expect(batch.style[2]).toBe(Math.round((180 / 400) * 255));
+    expect(batch.style[3]).toBe(VesselModel.Ferry);
   });
 });

@@ -92,7 +92,7 @@ export interface HaloActions {
   select(ref: EntityRef | null): void;
   setDetail(detail: EntityDetail | null, status: HaloState["detailStatus"]): void;
   setFollowing(following: boolean): void;
-  /** Ride behind the selected aircraft (or stop). Only aircraft can be chased. */
+  /** Ride behind the selected aircraft or ship (or stop). Only those can be chased. */
   setChase(chase: boolean): void;
   setHover(hover: HoverState | null): void;
   setTrackSeries(series: TrackSeries | null): void;
@@ -230,7 +230,8 @@ export const useHalo = create<HaloStore>()(
         set(on ? { following: true } : { following: false, chase: false });
       },
       setChase: (chase) => {
-        const on = chase && get().selection?.kind === EntityKind.Aircraft;
+        const kind = get().selection?.kind;
+        const on = chase && (kind === EntityKind.Aircraft || kind === EntityKind.Ship);
         set(on ? { chase: true, following: true } : { chase: false });
       },
       setHover: (hover) => set({ hover }),
