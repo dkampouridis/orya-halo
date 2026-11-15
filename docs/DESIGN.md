@@ -76,21 +76,26 @@ dashes, and take their true proportions only as they grow towards true scale. Si
 category live in `GLYPH_SCALE` (`packages/layers/src/movers/movers-shaders.ts`), shared by
 the shaders and the selection ring, which grows to clear the silhouette it marks.
 
-Close in (from zoom 8.6 to 9.6) aircraft turn from glyphs into 3D models of their real types:
+From a country away (zoom 5.6 to 6.6) aircraft turn from glyphs into 3D models of their real types:
 the glyph fades out as the model fades in, keeping its trail and its click target. The models
 are generated from published dimensions (`packages/schema/src/aircraft-types.ts`: length,
 span, fuselage, wing sweep and chord, engines, tail layout; about 300 ICAO type codes over 35
 models, with a stand-in by ADS-B category when the type is not known), so an A380 is an A380
 and a Cessna a Cessna, in one plain light grey with no liveries. They bank in turns and pitch on
-climbs and descents, and are drawn larger than life (a 40 m airliner 48 px long) until true
-size can be seen, all by the same factor so relative sizes stay true.
+climbs and descents, and are drawn larger than life (a 40 m airliner 26 px long from a country away,
+48 px close in) until true size can be seen, all by the same factor so relative sizes stay
+true. At most 3,000 are drawn (800 on the balanced tier, none on the cheapest), nearest the
+middle of the view first.
 
 **3D view** (V, or the button in an aircraft's detail panel) rides behind the selected
 aircraft: the camera sits about four and a half aircraft-lengths behind and above it, turned
 22 degrees off its track for a three-quarter view, looking down at 76 degrees, so the horizon
-and sky are in the frame. The sky there is the design's (space above, a dim blue glow along
-the horizon, haze over the ground), not MapLibre's white. Any drag, a flight elsewhere, or V
-again leaves it.
+and sky are in the frame. The wheel moves the camera nearer or further (up to 50 times the
+starting distance; far back, the other aircraft are enlarged again so they can be seen), and
+dragging turns it round the aircraft (sideways) or lifts it towards looking straight down
+(upwards). The sky there is the design's (space above, a dim blue glow along
+the horizon, haze over the ground), not MapLibre's white. Satellites are hidden in the 3D view: along the horizon
+they would fill the sky. V again, the button, or flying elsewhere leaves it.
 
 The Earth itself: dark and desaturated by day (land `#10151c`, water `#070b11`, lifted by up to
 1.6x toward the subsolar point so the terminator reads; land reaches about `#1a222d`),

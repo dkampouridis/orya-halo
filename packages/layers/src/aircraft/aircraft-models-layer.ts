@@ -274,7 +274,10 @@ export class AircraftModelsLayer extends CompositeLayer<Required<AircraftModelsL
       }
       list.push({
         position: [c.lon, c.lat, c.alt],
-        orientation: [-clamp(climb, -15, 15), 90 - hdg, clamp(bank, -30, 30)],
+        // Yaw turns the nose (+x) anticlockwise from east. On the globe deck.gl
+        // lays mesh offsets out along west, south and up (its frame's x and y
+        // are `-east` and `-north`), so there the yaw is half a turn more.
+        orientation: [-clamp(climb, -15, 15), (globe ? 270 : 90) - hdg, clamp(bank, -30, 30)],
         scale: [k, k, k],
         selected,
       });

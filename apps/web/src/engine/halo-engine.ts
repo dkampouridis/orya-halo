@@ -131,8 +131,10 @@ const LIGHTS_CREDIT: Credit = {
 const DEG = Math.PI / 180;
 
 /** A 40 m airliner's model is drawn this long while its true size is smaller; none is shorter than the minimum. */
-const MODEL_TARGET_PX = 48;
-const MODEL_MIN_PX = 22;
+const MODEL_TARGET_PX: [number, number] = [26, 48];
+const MODEL_MIN_PX: [number, number] = [14, 22];
+/** Zoom range over which models grow from the first to the second of those sizes. */
+const MODEL_SIZE_ZOOM: [number, number] = [5.6, 9];
 
 /**
  * deck.gl's near plane, in viewport heights from the camera (its default is
@@ -155,6 +157,12 @@ const CHASE_PITCH = 76;
 const CHASE_SIDE_DEG = -22;
 const CHASE_DISTANCE_PER_SIZE = 4.5;
 const CHASE_EASE_MS = 450;
+/** While a hand is on the 3D view, the camera follows it this quickly. */
+const CHASE_DRAG_EASE_MS = 60;
+/** How far the wheel can pull the 3D view's camera back, as a multiple of its starting distance. */
+const CHASE_ZOOM_MAX = 50;
+/** Pitch the 3D view can be dragged between: nearly straight down to nearly level. */
+const CHASE_PITCH_RANGE: [number, number] = [12, 82];
 /**
  * On deck.gl's globe a vertex is stored relative to the Earth's centre in
  * 32-bit floats, about 0.75 m apart: a 1.7 m fuselage seen from 70 m away
@@ -170,7 +178,7 @@ const MAX_PITCH = 70;
  * Zoom range over which aircraft turn from flat glyphs into 3D models of
  * their types: the glyph fades out as the model fades in.
  */
-const MODEL_ZOOM: [number, number] = [8.6, 9.6];
+const MODEL_ZOOM: [number, number] = [5.6, 6.6];
 
 /** Smallest ring diameters, pixels; rings grow to clear larger silhouettes. */
 const HOVER_RING_PX = 18;
@@ -409,6 +417,13 @@ export class HaloEngineImpl implements HaloEngine {
   /** The 3D view's own bearing and pitch, about the aircraft (the map's are about its centre). */
   private chaseBearing = 0;
   private chasePitch = 0;
+  /** What the hand has asked of the 3D view: distance as a multiple, a turn about the aircraft, a pitch. */
+  private chaseZoom = 1;
+  private chaseYaw = 0;
+  private chasePitchGoal = CHASE_PITCH;
+  private chaseDrag: { id: number; x: number; y: number; yaw: number; pitch: number } | null = null;
+  /** MapLibre's own camera controls, off while the 3D view has the camera. */
+  private savedHandlers: { name: string; enabled: boolean }[] | null = null;
   private followFrom: { lon: number; lat: number; startedAt: number } | null = null;
   /** A change of zoom, bearing or pitch asked for while following, eased in by the frame loop. */
   private followAdjust: {
@@ -871,6 +886,7 @@ export class HaloEngineImpl implements HaloEngine {
 
   private bindDomEvents(): void {
     const target = this.map.getCanvasContainer();
+    this.bindChaseControls(target);
     const interact = (): void => this.onInteract();
     const options: AddEventListenerOptions = { passive: true, capture: true };
     for (const type of ["pointerdown", "wheel", "touchstart"] as const) {
@@ -1060,10 +1076,15 @@ export class HaloEngineImpl implements HaloEngine {
           const b0 = this.chaseBearing;
           const goalBearing =
             (Number.isFinite(subject.heading) ? subject.heading : b0) + CHASE_SIDE_DEG;
-          this.chaseBearing = b0 + bearingDelta(b0, goalBearing) * k;
-          this.chasePitch += (CHASE_PITCH - this.chasePitch) * k;
+          // A hand on the view moves the camera at once; the aircraft's own turns are eased.
+          const kHand =
+            this.chaseDrag && !this.reducedMotion ? 1 - 0.5 ** (dt / CHASE_DRAG_EASE_MS) : k;
+          this.chaseBearing = b0 + bearingDelta(b0, goalBearing + this.chaseYaw) * kHand;
+          this.chasePitch += (this.chasePitchGoal - this.chasePitch) * kHand;
           const goalDistance =
-            Math.max(subject.size * CHASE_DISTANCE_PER_SIZE, 60) * this.chaseScale(subject.size);
+            Math.max(subject.size * CHASE_DISTANCE_PER_SIZE, 60) *
+            this.chaseScale(subject.size) *
+            this.chaseZoom;
           this.chaseDistanceM += (goalDistance - this.chaseDistanceM) * k;
           const camera = chaseCamera(
             at.lon,
@@ -1224,7 +1245,7 @@ export class HaloEngineImpl implements HaloEngine {
   private modelsActive(): boolean {
     const batch = this.batches.get(EntityKind.Aircraft);
     return (
-      QUALITY[this.quality].aircraftModels &&
+      QUALITY[this.quality].aircraftModels > 0 &&
       this.visible.aircraft &&
       batch !== undefined &&
       batch.count > 0 &&
@@ -1244,14 +1265,29 @@ export class HaloEngineImpl implements HaloEngine {
     const size = Math.max(spec.lengthM, spec.spanM);
     const k = Math.max(
       1,
-      MODEL_TARGET_PX / (40 * pixelsPerMeter),
-      MODEL_MIN_PX / (size * pixelsPerMeter),
+      this.modelPixels().target / (40 * pixelsPerMeter),
+      this.modelPixels().min / (size * pixelsPerMeter),
     );
     return (size * pixelsPerMeter * k) / 2;
   }
 
+  /** How long models are drawn at this zoom: small from a country away, larger close in. */
+  private modelPixels(): { target: number; min: number } {
+    const t = clamp(
+      (this.map.getZoom() - MODEL_SIZE_ZOOM[0]) / (MODEL_SIZE_ZOOM[1] - MODEL_SIZE_ZOOM[0]),
+      0,
+      1,
+    );
+    return {
+      target: MODEL_TARGET_PX[0] + (MODEL_TARGET_PX[1] - MODEL_TARGET_PX[0]) * t,
+      min: MODEL_MIN_PX[0] + (MODEL_MIN_PX[1] - MODEL_MIN_PX[0]) * t,
+    };
+  }
+
   private modelsLayer(): AircraftModelsLayer {
     const zoom = this.map.getZoom();
+    const size = this.modelPixels();
+    const far = this.chasing ? smoothstep(4, 16, this.chaseZoom) : 0;
     const t = clamp((zoom - MODEL_ZOOM[0]) / (MODEL_ZOOM[1] - MODEL_ZOOM[0]), 0, 1);
     return new AircraftModelsLayer({
       id: "aircraft-models",
@@ -1261,9 +1297,12 @@ export class HaloEngineImpl implements HaloEngine {
       altitudeScale: MOVERS[EntityKind.Aircraft]?.altitudeScale ?? 1,
       selectedId: this.selection?.kind === EntityKind.Aircraft ? this.selection.id : null,
       // In the 3D view the camera is beside the aircraft: true size, nothing enlarged.
-      selectedScale: this.chasing ? this.chaseScale(this.chaseSubject().size) : 1,
-      targetPixels: this.chasing ? 0 : MODEL_TARGET_PX,
-      minPixels: this.chasing ? 0 : MODEL_MIN_PX,
+      selectedScale: this.chasing ? this.chaseScale(this.chaseSubject().size) * (1 - far) + far : 1,
+      // Close behind an aircraft everything is true size; pulled far back the
+      // others are enlarged again, as in the ordinary view, so they can be seen.
+      targetPixels: this.chasing ? size.target * far : size.target,
+      minPixels: this.chasing ? size.min * far : size.min,
+      maxModels: QUALITY[this.quality].aircraftModels,
       opacity: t * t * (3 - 2 * t),
     });
   }
@@ -1538,14 +1577,15 @@ export class HaloEngineImpl implements HaloEngine {
           glow: q.glow,
           farThin: q.farThin,
           slowMotion: this.reducedMotion,
-          bodyFadeZoomRange: kind === EntityKind.Aircraft && q.aircraftModels ? MODEL_ZOOM : null,
+          bodyFadeZoomRange:
+            kind === EntityKind.Aircraft && q.aircraftModels > 0 ? MODEL_ZOOM : null,
           pickable: true,
           parameters: GLOW_PARAMETERS,
         }),
       );
     }
 
-    if (q.aircraftModels && this.visible.aircraft) {
+    if (q.aircraftModels > 0 && this.visible.aircraft) {
       // Holds the 3D model shaders in luma.gl's cache (it drops a program
       // with its last layer, and a recompile is a 40 ms stall the first time
       // models appear). One transparent instance, smaller than a pixel.
@@ -1670,6 +1710,10 @@ export class HaloEngineImpl implements HaloEngine {
       this.chaseDistanceM = 1.5 * this.options.container.clientHeight * metresPerPixel;
       this.chaseBearing = this.map.getBearing();
       this.chasePitch = this.map.getPitch();
+      this.chaseZoom = 1;
+      this.chaseYaw = 0;
+      this.chasePitchGoal = CHASE_PITCH;
+      this.takeMapHandlers(true);
       if (!this.following) this.setFollowing(true);
       this.chasing = true;
       this.layersDirty = true;
@@ -1679,6 +1723,7 @@ export class HaloEngineImpl implements HaloEngine {
     this.chasing = false;
     this.layersDirty = true;
     this.setNearPlane(false);
+    this.takeMapHandlers(false);
     if (!this.following) {
       this.map.setMaxPitch(MAX_PITCH);
       return;
@@ -1690,6 +1735,89 @@ export class HaloEngineImpl implements HaloEngine {
       { durationMs },
     );
     this.chaseRestore = window.setTimeout(() => this.map?.setMaxPitch(MAX_PITCH), durationMs + 50);
+  }
+
+  /** Turn MapLibre's own camera controls off while the 3D view has the camera, and back as they were. */
+  private takeMapHandlers(take: boolean): void {
+    type Handler = { isEnabled(): boolean; enable(): void; disable(): void };
+    const map = this.map as unknown as Record<string, Handler | undefined>;
+    const names = [
+      "dragPan",
+      "dragRotate",
+      "scrollZoom",
+      "touchZoomRotate",
+      "touchPitch",
+      "doubleClickZoom",
+      "keyboard",
+      "boxZoom",
+    ];
+    if (take && !this.savedHandlers) {
+      this.savedHandlers = names.flatMap((name) => {
+        const handler = map[name];
+        if (!handler) return [];
+        const enabled = handler.isEnabled();
+        handler.disable();
+        return [{ name, enabled }];
+      });
+    } else if (!take && this.savedHandlers) {
+      for (const { name, enabled } of this.savedHandlers) if (enabled) map[name]?.enable();
+      this.savedHandlers = null;
+      this.chaseDrag = null;
+    }
+  }
+
+  /**
+   * The 3D view's own controls. The wheel moves the camera nearer or further
+   * (up to CHASE_ZOOM_MAX times); dragging sideways turns it round the
+   * aircraft, dragging up lifts it towards looking straight down.
+   */
+  private bindChaseControls(target: HTMLElement): void {
+    const onWheel = (e: WheelEvent): void => {
+      if (!this.chasing) return;
+      e.preventDefault();
+      const unit = e.deltaMode === 1 ? 40 : e.deltaMode === 2 ? 800 : 1;
+      this.chaseZoom = clamp(
+        this.chaseZoom * Math.exp(e.deltaY * unit * 0.0015),
+        1,
+        CHASE_ZOOM_MAX,
+      );
+    };
+    const onDown = (e: PointerEvent): void => {
+      if (!this.chasing || e.button > 0 || this.chaseDrag) return;
+      this.chaseDrag = {
+        id: e.pointerId,
+        x: e.clientX,
+        y: e.clientY,
+        yaw: this.chaseYaw,
+        pitch: this.chasePitchGoal,
+      };
+    };
+    const onMove = (e: PointerEvent): void => {
+      const drag = this.chaseDrag;
+      if (!this.chasing || !drag || e.pointerId !== drag.id) return;
+      this.chaseYaw = drag.yaw - (e.clientX - drag.x) * 0.3;
+      this.chasePitchGoal = clamp(
+        drag.pitch + (e.clientY - drag.y) * 0.25,
+        CHASE_PITCH_RANGE[0],
+        CHASE_PITCH_RANGE[1],
+      );
+    };
+    const onUp = (e: PointerEvent): void => {
+      if (this.chaseDrag?.id === e.pointerId) this.chaseDrag = null;
+    };
+    const wheelOptions: AddEventListenerOptions = { passive: false, capture: true };
+    target.addEventListener("wheel", onWheel, wheelOptions);
+    target.addEventListener("pointerdown", onDown, true);
+    window.addEventListener("pointermove", onMove, true);
+    window.addEventListener("pointerup", onUp, true);
+    window.addEventListener("pointercancel", onUp, true);
+    this.cleanup.push(() => {
+      target.removeEventListener("wheel", onWheel, wheelOptions);
+      target.removeEventListener("pointerdown", onDown, true);
+      window.removeEventListener("pointermove", onMove, true);
+      window.removeEventListener("pointerup", onUp, true);
+      window.removeEventListener("pointercancel", onUp, true);
+    });
   }
 
   /** The overlay's view: deck.gl's globe with the near plane for the mode the camera is in. */
@@ -1730,6 +1858,7 @@ export class HaloEngineImpl implements HaloEngine {
       this.chasing = false;
       this.layersDirty = true;
       this.setNearPlane(false);
+      this.takeMapHandlers(false);
       // The hand took over: put the pitch limit back at once.
       this.map?.setMaxPitch(MAX_PITCH);
     }
@@ -1918,6 +2047,8 @@ export class HaloEngineImpl implements HaloEngine {
   }
 
   private onInteract(): void {
+    // In the 3D view the hand steers the camera round the aircraft (see bindChaseControls).
+    if (this.chasing) return;
     // The hand on the globe wins at once: no frame of follow or orbit after this.
     this.endFollow();
     this.orbiting = false;

@@ -36,7 +36,7 @@ The screenshots were taken with generated test traffic, not live positions.
 
 ## What you see
 
-Close in, aircraft are drawn as 3D models of their real types (an A320, a 777, an ATR 72, a
+From a country away, aircraft are drawn as 3D models of their real types (an A320, a 777, an ATR 72, a
 Cessna, a helicopter), built from published dimensions, and the 3D view rides behind one.
 
 Every source was checked for terms that allow public display. The full table, with licences,
@@ -293,7 +293,7 @@ group per update (about every two hours) from each address, so prefer
 | `/`        | Search                                                                                                    |
 | `1` to `0` | Turn a layer on or off, in dock order                                                                     |
 | `F`        | Follow the selected object                                                                                |
-| `V`        | 3D view: ride behind the selected aircraft, drawn as a 3D model of its type                               |
+| `V`        | 3D view: ride behind the selected aircraft (wheel: nearer or further; drag: turn round it or look down)   |
 | `Esc`      | Close search, then clear the selection                                                                    |
 | `←` `→`    | Move through time, with the time tape focused (Shift or Page keys: five minutes; Home: oldest; End: live) |
 | `L`        | Back to live                                                                                              |
